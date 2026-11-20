@@ -203,6 +203,13 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger, listening f
 	}
 	defer listener.Close()
 
+	if cfg.DefaultNavidromeURL == "" {
+		if discovered := probeNavidrome("http://navidrome:4533", "http://127.0.0.1:4533"); discovered != "" {
+			cfg.DefaultNavidromeURL = discovered
+			log.Info("auto-discovered navidrome server", "url", discovered)
+		}
+	}
+
 	srvHandler := server.New(server.Options{
 		PublicURL:           cfg.PublicURL,
 		DefaultNavidromeURL: cfg.DefaultNavidromeURL,
@@ -231,14 +238,17 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger, listening f
 	if cfg.LogFormat != "json" {
 		fmt.Fprintf(os.Stderr, "\n")
 		fmt.Fprintf(os.Stderr, "  ▲  MOCHY NAVIDROME MODULE  v%s\n\n", version)
-		fmt.Fprintf(os.Stderr, "  ➜  Local:    %s\n", manifestLocal)
+		fmt.Fprintf(os.Stderr, "  ➜  Local:     %s\n", manifestLocal)
 		if manifestLAN != "" {
-			fmt.Fprintf(os.Stderr, "  ➜  Network:  %s\n", manifestLAN)
+			fmt.Fprintf(os.Stderr, "  ➜  Network:   %s\n", manifestLAN)
+		}
+		if cfg.DefaultNavidromeURL != "" {
+			fmt.Fprintf(os.Stderr, "  ➜  Navidrome: %s\n", cfg.DefaultNavidromeURL)
 		}
 		if cfg.PublicURL != "" {
-			fmt.Fprintf(os.Stderr, "  ➜  Public:   %s/manifest.json\n", strings.TrimRight(cfg.PublicURL, "/"))
+			fmt.Fprintf(os.Stderr, "  ➜  Public:    %s/manifest.json\n", strings.TrimRight(cfg.PublicURL, "/"))
 		}
-		fmt.Fprintf(os.Stderr, "\n  ➜  Mochy:    Settings → Modules → + Add Module\n\n")
+		fmt.Fprintf(os.Stderr, "\n  ➜  Mochy:     Settings → Modules → + Add Module\n\n")
 	}
 
 	attrs := []any{
@@ -247,6 +257,9 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger, listening f
 	}
 	if manifestLAN != "" {
 		attrs = append(attrs, "lan_manifest", manifestLAN)
+	}
+	if cfg.DefaultNavidromeURL != "" {
+		attrs = append(attrs, "navidrome_url", cfg.DefaultNavidromeURL)
 	}
 	if cfg.PublicURL != "" {
 		attrs = append(attrs, "public_manifest", strings.TrimRight(cfg.PublicURL, "/")+"/manifest.json")
@@ -295,6 +308,21 @@ func localLANIP() string {
 		if ipnet, ok := addr.(*net.IPNet); ok && !ipnet.IP.IsLoopback() {
 			if ip := ipnet.IP.To4(); ip != nil {
 				return ip.String()
+			}
+		}
+	}
+	return ""
+}
+
+func probeNavidrome(candidates ...string) string {
+	client := &http.Client{Timeout: 500 * time.Millisecond}
+	for _, target := range candidates {
+		reqURL := strings.TrimRight(target, "/") + "/rest/ping.view?f=json"
+		res, err := client.Get(reqURL)
+		if err == nil {
+			_ = res.Body.Close()
+			if res.StatusCode > 0 {
+				return target
 			}
 		}
 	}

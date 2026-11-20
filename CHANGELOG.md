@@ -14,7 +14,9 @@ Entries are written **one line per paragraph and bullet** (no hard-wrapping) so 
 
 ### Added
 
-- Support for `NAVIDROME_URL` environment variable to automatically pre-fill the default Navidrome server address in Mochy Music module settings.
+- Auto-discovery of Navidrome servers on the local/Docker network (`http://navidrome:4533`).
+- Auto-hides the "Server URL" setting in Mochy Music when a Navidrome server is configured or auto-discovered, leaving only Username and Password.
+- Support for `NAVIDROME_URL` environment variable to configure the default Navidrome server address.
 - Active upstream Navidrome credential validation on `/health` when credentials are provided in query parameters.
 - Cleanly aligned request logging columns with descriptive action tags (`[resolve stream]`, `[audio stream]`, `[seek range]`) and HTTP 206 Partial Content status labeling.
 - Explicit link to MIT license in README.

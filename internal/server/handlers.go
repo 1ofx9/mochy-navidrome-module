@@ -87,6 +87,49 @@ func (s *Server) serveRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) serveManifest(w http.ResponseWriter, r *http.Request) {
+	var settings []settingDefinition
+	if s.DefaultNavidromeURL == "" {
+		settings = append(settings, settingDefinition{
+			Key:         "navidrome_url",
+			Label:       "Server URL",
+			Type:        "text",
+			Hint:        "http://192.168.1.100:4533",
+			Description: "Navidrome server address",
+			Default:     "",
+		})
+	}
+	settings = append(settings,
+		settingDefinition{
+			Key:         "navidrome_user",
+			Label:       "Username",
+			Type:        "text",
+			Hint:        "admin",
+			Description: "Navidrome username",
+			Default:     "",
+		},
+		settingDefinition{
+			Key:         "navidrome_password",
+			Label:       "Password",
+			Type:        "text",
+			Hint:        "password",
+			Description: "Navidrome password",
+			Default:     "",
+		},
+		settingDefinition{
+			Key:         "quality",
+			Label:       "Audio Quality",
+			Type:        "select",
+			Default:     "lossless",
+			Description: "Preferred audio quality",
+			Options: []option{
+				{Value: "lossless", Label: "Lossless (FLAC/ALAC)"},
+				{Value: "hires", Label: "Hi-Res"},
+				{Value: "high", Label: "High (320 kbps)"},
+				{Value: "low", Label: "Low (128 kbps)"},
+			},
+		},
+	)
+
 	manifest := manifestResponse{
 		ID:          "mochy-navidrome",
 		Name:        "Navidrome",
@@ -96,45 +139,7 @@ func (s *Server) serveManifest(w http.ResponseWriter, r *http.Request) {
 		Icon:        "https://www.navidrome.org/favicon.png",
 		Type:        "web",
 		Resources:   []string{"search", "stream", "lyrics", "metadata"},
-		Settings: []settingDefinition{
-			{
-				Key:         "navidrome_url",
-				Label:       "Server URL",
-				Type:        "text",
-				Hint:        "http://192.168.1.100:4533",
-				Description: "Navidrome server address",
-				Default:     s.DefaultNavidromeURL,
-			},
-			{
-				Key:         "navidrome_user",
-				Label:       "Username",
-				Type:        "text",
-				Hint:        "admin",
-				Description: "Navidrome username",
-				Default:     "",
-			},
-			{
-				Key:         "navidrome_password",
-				Label:       "Password",
-				Type:        "text",
-				Hint:        "password",
-				Description: "Navidrome password",
-				Default:     "",
-			},
-			{
-				Key:         "quality",
-				Label:       "Audio Quality",
-				Type:        "select",
-				Default:     "lossless",
-				Description: "Preferred audio quality",
-				Options: []option{
-					{Value: "lossless", Label: "Lossless (FLAC/ALAC)"},
-					{Value: "hires", Label: "Hi-Res"},
-					{Value: "high", Label: "High (320 kbps)"},
-					{Value: "low", Label: "Low (128 kbps)"},
-				},
-			},
-		},
+		Settings:    settings,
 	}
 
 	w.Header().Set("Content-Type", "application/json; charset=utf-8")

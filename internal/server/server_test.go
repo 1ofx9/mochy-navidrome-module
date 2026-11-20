@@ -66,6 +66,56 @@ func TestManifest(t *testing.T) {
 	}
 }
 
+func TestManifestWithDefaultNavidromeURLHidesSetting(t *testing.T) {
+	srv := New(Options{
+		PublicURL:           "http://localhost:8090",
+		DefaultNavidromeURL: "http://navidrome:4533",
+		Version:             "1.1.0",
+	})
+	handler := srv.Handler()
+
+	req := httptest.NewRequest(http.MethodGet, "/manifest.json", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	var m manifestResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &m); err != nil {
+		t.Fatalf("failed to parse manifest: %v", err)
+	}
+	if len(m.Settings) != 3 {
+		t.Fatalf("settings length = %d, want 3 (navidrome_url must be hidden)", len(m.Settings))
+	}
+	for _, s := range m.Settings {
+		if s.Key == "navidrome_url" {
+			t.Fatalf("navidrome_url setting should be hidden when DefaultNavidromeURL is configured")
+		}
+	}
+}
+
+func TestSearchWithDefaultNavidromeURL(t *testing.T) {
+	fake := fakes.NewNavidrome(t)
+	srv := New(Options{
+		DefaultNavidromeURL: fake.URL,
+	})
+	handler := srv.Handler()
+
+	q := url.Values{
+		"navidrome_user":     {fakes.NavidromeUser},
+		"navidrome_password": {fakes.NavidromePassword},
+		"q":                  {"Religion"},
+	}
+	req := httptest.NewRequest(http.MethodGet, "/search?"+q.Encode(), nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+}
+
 func TestRootHandler(t *testing.T) {
 	rig := newTestRig(t)
 	handler := rig.server.Handler()
