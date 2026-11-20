@@ -12,7 +12,5 @@ services:
       - PORT=8090
       - LOG_LEVEL=info
       - LOG_FORMAT=text
-      # Optional: set public base URL if behind a reverse proxy
       # - PUBLIC_URL=https://music-module.example.com
-      # Optional: pre-fill default Navidrome URL in Mochy Music
       # - NAVIDROME_URL=https://music.example.com

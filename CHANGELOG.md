@@ -2,9 +2,20 @@
 
 All notable changes to this project are documented here. The format follows [Keep a Changelog](https://keepachangelog.com/en/1.1.0/) and versions follow [SemVer](https://semver.org/).
 
-Entries are written **one line per paragraph and bullet** (no hard-wrapping) so that a section pasted into GitHub release notes reflows to full width instead of breaking at the source wrap points.
-
 ## [Unreleased]
+
+## [1.2.0] - 2026-11-20
+
+### Added
+
+- GitHub Actions status badges (CI, Docker Publish, Release, License) in README.
+- `compose.example.yml` reference template for Docker Compose deployments with network auto-discovery guidance.
+- Updated `.env.example` with full configuration reference for all supported environment variables.
+
+### Changed
+
+- Streamlined documentation and refined security architecture overview.
+- Cleaned up comments across packages and verified zero dead code.
 
 ## [1.1.0] - 2026-11-20
 

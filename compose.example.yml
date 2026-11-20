@@ -1,0 +1,26 @@
+services:
+  mochy-navidrome-module:
+    image: ghcr.io/1ofx9/mochy-navidrome-module:1.2.0
+    container_name: mochy-navidrome-module
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      - PORT=8090
+      - LOG_LEVEL=info
+      - LOG_FORMAT=text
+
+      # Optional: Public URL if behind a reverse proxy (e.g. Caddy, Nginx)
+      # - PUBLIC_URL=https://music-module.example.com
+
+      # Optional: Pre-fill Navidrome server address and auto-hide the "Server URL" box in Mochy
+      # - NAVIDROME_URL=https://music.example.com
+
+    # Optional: If running on the same Docker network as Navidrome,
+    # the module automatically discovers http://navidrome:4533 on startup.
+    # networks:
+    #   - media
+
+# networks:
+#   media:
+#     external: true

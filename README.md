@@ -1,19 +1,24 @@
-# Mochy Navidrome Module (`mochy-navidrome-module`)
+# Mochy Navidrome Module
 
-A lightweight, stateless web module connecting [Navidrome](https://www.navidrome.org/) (and OpenSubsonic / Subsonic compatible music servers) to [Mochy Music](https://realidkroo.github.io/Mochy-Music/) on Android.
+[![CI](https://github.com/1ofx9/mochy-navidrome-module/actions/workflows/ci.yml/badge.svg)](https://github.com/1ofx9/mochy-navidrome-module/actions/workflows/ci.yml)
+[![Docker](https://github.com/1ofx9/mochy-navidrome-module/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/1ofx9/mochy-navidrome-module/actions/workflows/docker-publish.yml)
+[![Release](https://img.shields.io/github/v/release/1ofx9/mochy-navidrome-module?color=blue)](https://github.com/1ofx9/mochy-navidrome-module/releases)
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+
+A lightweight, stateless web module connecting [Navidrome](https://www.navidrome.org/) and Subsonic-compatible music servers to [Mochy Music](https://realidkroo.github.io/Mochy-Music/) on Android.
 
 ---
 
 ## Features
 
-- **Native Mochy Web Module**: Implements `/manifest.json`, `/search`, `/stream/{id}`, `/audio/{id}`, `/art/{id}`, `/lyrics`, and `/metadata` per Mochy's web module specification.
-- **Client-Side Authentication**: Credentials (`navidrome_url`, `navidrome_user`, `navidrome_password`, and `quality`) are entered in the Mochy Music app on your phone and sent with requests.
-- **100% Stateless**: No databases, no disk storage, and no background sync tasks.
-- **Lossless & Hi-Res Streaming**: Automatically detects and passes audio format badges (`flac`, `alac`, `aac`, `opus`, `mp3`), sample rate, and bit depth.
-- **HTTP Range Seeking**: Supports HTTP `Range` headers and `206 Partial Content` for responsive audio seeking in the player.
-- **Synchronized LRC Lyrics**: Extracts timed lyrics from Navidrome via OpenSubsonic `getLyricsBySongId` with fallback to standard Subsonic plain text lyrics.
-- **Cover Art Proxy & Cache**: In-memory LRU artwork cache with SHA-256 ETags and HTTP 304 revalidation.
-- **Zero External Go Dependencies**: Built exclusively using the Go standard library.
+- **Mochy Web Module Spec**: Implements `/manifest.json`, `/search`, `/stream/{id}`, `/audio/{id}`, `/art/{id}`, `/lyrics`, `/metadata`, and `/health`.
+- **Client-Side Auth**: Server URL, username, and password are saved in Mochy Music on your phone and passed with requests.
+- **Docker Auto-Discovery**: Automatically discovers Navidrome on the same Docker network (`http://navidrome:4533`) and auto-hides the "Server URL" box in the app.
+- **Continuous Audio Streaming**: Unbounded stream proxy supporting HTTP `Range` requests and `206 Partial Content` seeking without buffer cutoffs.
+- **Lossless & Hi-Res Format Badging**: Resolves audio codec, sample rate, bit depth, and badges (`lossless`, `hires`, `high`, `low`).
+- **Synchronized LRC Lyrics**: Fetches timed lyrics from Navidrome via OpenSubsonic `getLyricsBySongId` with fallback to standard Subsonic lyrics.
+- **In-Memory Artwork Cache**: Thread-safe LRU cover art cache with SHA-256 ETags and HTTP 304 revalidation.
+- **Zero Third-Party Dependencies**: Pure Go standard library implementation.
 
 ---
 
@@ -21,14 +26,12 @@ A lightweight, stateless web module connecting [Navidrome](https://www.navidrome
 
 ### Option A: Docker Compose (Recommended)
 
-Create a `compose.yml` file:
+Copy [`compose.example.yml`](compose.example.yml) or create a `compose.yml`:
 
 ```yaml
 services:
   mochy-navidrome-module:
-    image: ghcr.io/1ofx9/mochy-navidrome-module:latest
-    # Or build locally:
-    # build: .
+    image: ghcr.io/1ofx9/mochy-navidrome-module:1.2.0
     container_name: mochy-navidrome-module
     restart: unless-stopped
     ports:
@@ -37,9 +40,13 @@ services:
       - PORT=8090
       - LOG_LEVEL=info
       - LOG_FORMAT=text
-      # If using a reverse proxy or public domain, set your public URL:
+      # Optional: set public URL if behind a reverse proxy
       # - PUBLIC_URL=https://music-module.example.com
+      # Optional: pre-fill Navidrome server address (auto-hides Server URL in Mochy)
+      # - NAVIDROME_URL=https://music.example.com
 ```
+
+> **Tip**: If this container shares a Docker network with your Navidrome container, it will automatically discover `http://navidrome:4533` on startup. You do not need to configure `NAVIDROME_URL`.
 
 Start the container:
 
@@ -47,9 +54,7 @@ Start the container:
 docker compose up -d
 ```
 
-### Option B: Docker CLI (`docker run`)
-
-Using the pre-built GHCR image:
+### Option B: Docker Run
 
 ```bash
 docker run -d \
@@ -57,34 +62,23 @@ docker run -d \
   --restart unless-stopped \
   -p 8090:8090 \
   -e LOG_LEVEL=info \
-  ghcr.io/1ofx9/mochy-navidrome-module:latest
+  ghcr.io/1ofx9/mochy-navidrome-module:1.2.0
 ```
 
-Or building from source:
+### Health Check
+
+Verify that the module is healthy:
 
 ```bash
-git clone https://github.com/1ofx9/mochy-navidrome-module.git
-cd mochy-navidrome-module
-docker build -t mochy-navidrome-module:latest .
-docker run -d --name mochy-navidrome-module --restart unless-stopped -p 8090:8090 mochy-navidrome-module:latest
-```
-
-### Check Container Health
-
-Verify that the module is running:
-
-```bash
-docker ps
-# Status will indicate (healthy)
 curl http://localhost:8090/health
-# {"status":"ok","version":"1.0.0"}
+# {"status":"ok","version":"1.2.0"}
 ```
 
 ---
 
-## Reverse Proxy Setup (Optional but Recommended)
+## Reverse Proxy Setup (Optional)
 
-If you expose the module over the internet with HTTPS, configure your reverse proxy:
+If exposing the module through a reverse proxy, pass the incoming host and headers:
 
 #### Caddy
 ```caddyfile
@@ -107,7 +101,7 @@ server {
 }
 ```
 
-When using a reverse proxy, set the `PUBLIC_URL` environment variable:
+Set `PUBLIC_URL` when using a reverse proxy:
 ```bash
 PUBLIC_URL=https://music-module.example.com
 ```
@@ -116,36 +110,38 @@ PUBLIC_URL=https://music-module.example.com
 
 ## Setup in Mochy Music (Android)
 
-1. Open **Mochy Music** on your Android device.
-2. Go to **Settings** → **Modules** → **Add a module**.
-3. Choose **Add from a link** and paste your module's URL:
-   - **Local Network**: `http://<HOST_LAN_IP>:8090/manifest.json` *(make sure your phone is on the same Wi-Fi)*
-   - **Domain / Reverse Proxy**: `https://music-module.example.com/manifest.json`
-4. Tap **Add**. Mochy will register **Navidrome**.
-5. On the **Navidrome** module page in Mochy, toggle **Enable** and fill in your settings:
-   - **Server URL**: Your Navidrome server address (e.g. `http://192.168.1.100:4533` or `https://music.example.com`)
-   - **Username**: Your Navidrome username
-   - **Password**: Your Navidrome password
-   - **Audio Quality**: Preferred streaming quality (`lossless`, `hires`, `high`, or `low`)
-6. Search for any song in your Navidrome library and stream directly in Mochy Music.
+1. Open **Mochy Music** on your Android phone.
+2. Navigate to **Settings** → **Modules** → **Add a module**.
+3. Select **Add from a link** and enter your module manifest URL:
+   - **Local Network**: `http://<LAN_IP>:8090/manifest.json`
+   - **Reverse Proxy**: `https://music-module.example.com/manifest.json`
+4. Tap **Add**. Mochy will register the **Navidrome** module.
+5. In the module settings:
+   - **Server URL**: Enter your Navidrome server address *(this field is automatically hidden if `NAVIDROME_URL` is set or auto-discovered on Docker)*.
+   - **Username**: Your Navidrome username.
+   - **Password**: Your Navidrome password.
+   - **Audio Quality**: Preferred streaming quality (`lossless`, `hires`, `high`, or `low`).
+6. Search and stream tracks from your Navidrome library directly in Mochy Music.
 
 ---
 
 ## Configuration Reference
 
-All environment variables are optional with sensible defaults:
+Refer to [`.env.example`](.env.example) for environment variable defaults:
 
 | Variable | Default | Description |
 |---|---|---|
-| `PORT` | `8090` | HTTP listening port |
-| `PUBLIC_URL` | *(empty)* | Optional public base URL (e.g. `https://music-module.example.com`). Autodetected from `Host` header if empty. |
-| `NAVIDROME_URL` | *(empty)* | Optional default Navidrome server URL pre-filled in Mochy Music settings (e.g. `https://music.example.com`). |
-| `LOG_LEVEL` | `info` | Log verbosity (`debug`, `info`, `warn`, `error`) |
-| `LOG_FORMAT` | `text` | Log format (`text` or `json`) |
+| `PORT` | `8090` | HTTP port the module listens on. |
+| `PUBLIC_URL` | *(empty)* | Optional public base URL. Detected from the `Host` header if empty. |
+| `NAVIDROME_URL` | *(empty)* | Optional default Navidrome URL. Hides the "Server URL" input in Mochy when set. |
+| `LOG_LEVEL` | `info` | Log verbosity: `debug`, `info`, `warn`, `error`. |
+| `LOG_FORMAT` | `text` | Log format: `text` or `json`. |
 
 ---
 
-## Run Locally with Go
+## Development & Local Build
+
+Requirements: Go 1.24+
 
 ```bash
 # Clone the repository
@@ -155,21 +151,19 @@ cd mochy-navidrome-module
 # Run unit tests
 go test -v ./...
 
-# Start the module server
+# Start server locally
 go run ./cmd/module
 ```
 
 ---
 
-## Security & Privacy
+## Security & Architecture
 
-- **100% Stateless**: No credentials, session tokens, or playback logs are stored on disk.
-- **Client-Side Auth**: Server URLs and passwords remain securely on your mobile device in Mochy Music.
-- **Subsonic MD5 Token Auth**: Upstream Subsonic authentication uses MD5 token auth (`hex(md5(password + salt))`) with a cryptographically secure random salt (`crypto/rand`) for each request. Plaintext passwords never travel to Navidrome in query strings.
-- **Zero Scrobbling / Tracking**: Zero scrobble or now-playing reports are ever sent, keeping listening habits completely private.
-- **Security Headers**: Standard defense-in-depth headers applied globally (`X-Content-Type-Options: nosniff`, `X-Frame-Options: DENY`, `Referrer-Policy: no-referrer`, and `Cross-Origin-Resource-Policy: cross-origin`).
-- **Input & URL Sanitization**: `navidrome_url` parameters are strictly parsed to require valid `http` or `https` schemes with non-empty hosts, and track IDs are sanitized against CRLF control characters.
-- **Memory & Resource Caps**: Upstream Subsonic and artwork responses are strictly capped via `io.LimitReader` to prevent memory exhaustion (OOM) attacks.
+- **Stateless**: Does not store credentials, session tokens, or music files on disk.
+- **Client-Side Storage**: Navidrome credentials live on your device in the Mochy Music app and are passed per request.
+- **Subsonic Token Auth**: Uses Subsonic's salted MD5 token authentication (`hex(md5(password + salt))`); raw passwords are never sent in query strings.
+- **Private**: Does not scrobble or log listening activity.
+- **Bounded Streams**: Upstream payloads and artwork responses are bounded with size limits to prevent unbounded memory usage.
 
 ---
 
