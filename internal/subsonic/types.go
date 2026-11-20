@@ -93,14 +93,14 @@ func (s Song) QualityLabel() string {
 	isLossless := codec == "flac" || codec == "alac" || codec == "pcm" || codec == "wavpack" || codec == "ape"
 	if isLossless {
 		if s.BitDepth > 16 || s.SamplingRate > 48000 {
-			return "HI_RES_LOSSLESS"
+			return "Hi-Res Lossless"
 		}
-		return "LOSSLESS"
+		return "Lossless"
 	}
 	if s.BitRate >= 256 {
-		return "HIGH"
+		return "High"
 	}
-	return "LOW"
+	return "Low"
 }
 
 type SongList []Song

@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.2.1] - 2026-11-20
+
+### Changed
+
+- Polished audio quality badge formatting in stream responses (`Hi-Res Lossless`, `Lossless`, `High`, `Low`) for cleaner aesthetics in the player.
+- Added `https://<your-domain>/manifest.json` placeholder in the startup banner when `PUBLIC_URL` is unset.
+
 ## [1.2.0] - 2026-11-20
 
 ### Added

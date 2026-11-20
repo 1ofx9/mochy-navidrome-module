@@ -20,7 +20,7 @@ import (
 	"github.com/1ofx9/mochy-navidrome-module/internal/server"
 )
 
-var version = "1.2.0"
+var version = "1.2.1"
 
 const shutdownGrace = 10 * time.Second
 
@@ -247,6 +247,8 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger, listening f
 		}
 		if cfg.PublicURL != "" {
 			fmt.Fprintf(os.Stderr, "  ➜  Public:    %s/manifest.json\n", strings.TrimRight(cfg.PublicURL, "/"))
+		} else {
+			fmt.Fprintf(os.Stderr, "  ➜  Public:    https://<your-domain>/manifest.json\n")
 		}
 		fmt.Fprintf(os.Stderr, "\n  ➜  Mochy:     Settings → Modules → + Add Module\n\n")
 	}

@@ -15,7 +15,7 @@ A lightweight, stateless web module connecting [Navidrome](https://www.navidrome
 - **Client-Side Auth**: Server URL, username, and password are saved in Mochy Music on your phone and passed with requests.
 - **Docker Auto-Discovery**: Automatically discovers Navidrome on the same Docker network (`http://navidrome:4533`) and auto-hides the "Server URL" box in the app.
 - **Continuous Audio Streaming**: Unbounded stream proxy supporting HTTP `Range` requests and `206 Partial Content` seeking without buffer cutoffs.
-- **Lossless & Hi-Res Format Badging**: Resolves audio codec, sample rate, bit depth, and badges (`lossless`, `hires`, `high`, `low`).
+- **Lossless & Hi-Res Format Badging**: Resolves audio codec, sample rate, bit depth, and player badges (`Hi-Res Lossless`, `Lossless`, `High`, `Low`).
 - **Synchronized LRC Lyrics**: Fetches timed lyrics from Navidrome via OpenSubsonic `getLyricsBySongId` with fallback to standard Subsonic lyrics.
 - **In-Memory Artwork Cache**: Thread-safe LRU cover art cache with SHA-256 ETags and HTTP 304 revalidation.
 - **Zero Third-Party Dependencies**: Pure Go standard library implementation.
@@ -31,7 +31,7 @@ Copy [`compose.example.yml`](compose.example.yml) or create a `compose.yml`:
 ```yaml
 services:
   mochy-navidrome-module:
-    image: ghcr.io/1ofx9/mochy-navidrome-module:1.2.0
+    image: ghcr.io/1ofx9/mochy-navidrome-module:1.2.1
     container_name: mochy-navidrome-module
     restart: unless-stopped
     ports:
@@ -62,7 +62,7 @@ docker run -d \
   --restart unless-stopped \
   -p 8090:8090 \
   -e LOG_LEVEL=info \
-  ghcr.io/1ofx9/mochy-navidrome-module:1.2.0
+  ghcr.io/1ofx9/mochy-navidrome-module:1.2.1
 ```
 
 ### Health Check
@@ -71,7 +71,7 @@ Verify that the module is healthy:
 
 ```bash
 curl http://localhost:8090/health
-# {"status":"ok","version":"1.2.0"}
+# {"status":"ok","version":"1.2.1"}
 ```
 
 ---

@@ -261,11 +261,11 @@ func (s *Server) serveStream(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if maxBitRate == 128 {
-		resp.Quality = "LOW"
+		resp.Quality = "Low"
 		resp.Format = "mp3"
 		resp.Codec = "mp3"
 	} else if maxBitRate == 320 {
-		resp.Quality = "HIGH"
+		resp.Quality = "High"
 		resp.Format = "mp3"
 		resp.Codec = "mp3"
 	}

@@ -185,7 +185,7 @@ func TestStream(t *testing.T) {
 		t.Fatalf("unmarshal error: %v", err)
 	}
 
-	if resp.Format != "flac" || resp.Codec != "flac" || resp.Quality != "HI_RES_LOSSLESS" {
+	if resp.Format != "flac" || resp.Codec != "flac" || resp.Quality != "Hi-Res Lossless" {
 		t.Fatalf("unexpected stream specs: %+v", resp)
 	}
 	if !strings.Contains(resp.URL, "/audio/s-1") {
@@ -199,7 +199,7 @@ func TestStream(t *testing.T) {
 	handler.ServeHTTP(recLow, reqLow)
 	var respLow streamResponse
 	_ = json.Unmarshal(recLow.Body.Bytes(), &respLow)
-	if respLow.Quality != "LOW" || respLow.Codec != "mp3" {
+	if respLow.Quality != "Low" || respLow.Codec != "mp3" {
 		t.Fatalf("expected LOW mp3, got %+v", respLow)
 	}
 }

@@ -51,8 +51,8 @@ func TestSearch(t *testing.T) {
 	if songs[0].Codec() != "flac" {
 		t.Fatalf("got codec %q, want flac", songs[0].Codec())
 	}
-	if songs[0].QualityLabel() != "HI_RES_LOSSLESS" {
-		t.Fatalf("got quality %q, want HI_RES_LOSSLESS", songs[0].QualityLabel())
+	if songs[0].QualityLabel() != "Hi-Res Lossless" {
+		t.Fatalf("got quality %q, want Hi-Res Lossless", songs[0].QualityLabel())
 	}
 }
 
