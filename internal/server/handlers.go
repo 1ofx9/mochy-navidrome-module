@@ -103,7 +103,7 @@ func (s *Server) serveManifest(w http.ResponseWriter, r *http.Request) {
 				Type:        "text",
 				Hint:        "http://192.168.1.100:4533",
 				Description: "Navidrome server address",
-				Default:     "",
+				Default:     s.DefaultNavidromeURL,
 			},
 			{
 				Key:         "navidrome_user",
@@ -144,6 +144,9 @@ func (s *Server) serveManifest(w http.ResponseWriter, r *http.Request) {
 func (s *Server) getSubsonicClient(r *http.Request) (*subsonic.Client, error) {
 	q := r.URL.Query()
 	baseURL := strings.TrimSpace(q.Get("navidrome_url"))
+	if baseURL == "" {
+		baseURL = s.DefaultNavidromeURL
+	}
 	user := strings.TrimSpace(q.Get("navidrome_user"))
 	pass := q.Get("navidrome_password")
 
@@ -442,6 +445,32 @@ func (s *Server) serveMetadata(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) serveHealth(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Query().Get("navidrome_user") != "" || r.URL.Query().Get("navidrome_url") != "" {
+		client, err := s.getSubsonicClient(r)
+		if err != nil {
+			writeJSON(w, http.StatusBadRequest, map[string]string{
+				"status":  "error",
+				"version": s.Version,
+				"error":   err.Error(),
+			})
+			return
+		}
+		if _, err := client.Ping(r.Context()); err != nil {
+			writeJSON(w, http.StatusUnauthorized, map[string]string{
+				"status":  "error",
+				"version": s.Version,
+				"error":   "invalid navidrome credentials or unreachable server",
+			})
+			return
+		}
+		writeJSON(w, http.StatusOK, map[string]string{
+			"status":    "ok",
+			"version":   s.Version,
+			"navidrome": "connected",
+		})
+		return
+	}
+
 	writeJSON(w, http.StatusOK, healthResponse{
 		Status:  "ok",
 		Version: s.Version,

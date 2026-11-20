@@ -27,10 +27,11 @@ var (
 )
 
 type Client struct {
-	baseURL    string
-	username   string
-	password   string
-	httpClient *http.Client
+	baseURL      string
+	username     string
+	password     string
+	httpClient   *http.Client
+	streamClient *http.Client
 }
 
 func New(baseURL, username, password string, httpClient *http.Client) *Client {
@@ -38,10 +39,11 @@ func New(baseURL, username, password string, httpClient *http.Client) *Client {
 		httpClient = &http.Client{Timeout: 15 * time.Second}
 	}
 	return &Client{
-		baseURL:    strings.TrimRight(baseURL, "/"),
-		username:   username,
-		password:   password,
-		httpClient: httpClient,
+		baseURL:      strings.TrimRight(baseURL, "/"),
+		username:     username,
+		password:     password,
+		httpClient:   httpClient,
+		streamClient: &http.Client{Timeout: 0},
 	}
 }
 
@@ -256,7 +258,7 @@ func (c *Client) OpenStream(ctx context.Context, id string, maxBitRate int, head
 			}
 		}
 	}
-	return c.httpClient.Do(req)
+	return c.streamClient.Do(req)
 }
 
 func (c *Client) FetchArt(ctx context.Context, id string, size int) ([]byte, string, string, string, error) {

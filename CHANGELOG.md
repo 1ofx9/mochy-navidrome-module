@@ -6,6 +6,19 @@ Entries are written **one line per paragraph and bullet** (no hard-wrapping) so 
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-11-20
+
+### Fixed
+
+- Fixed audio stream buffering and premature cutoffs by lifting the 15-second client timeout on long-lived audio streaming connections (`GET /audio/{id}`).
+
+### Added
+
+- Support for `NAVIDROME_URL` environment variable to automatically pre-fill the default Navidrome server address in Mochy Music module settings.
+- Active upstream Navidrome credential validation on `/health` when credentials are provided in query parameters.
+- Cleanly aligned request logging columns with descriptive action tags (`[resolve stream]`, `[audio stream]`, `[seek range]`) and HTTP 206 Partial Content status labeling.
+- Explicit link to MIT license in README.
+
 ## [1.0.0] - 2026-11-20
 
 ### Added

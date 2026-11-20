@@ -10,10 +10,11 @@ import (
 )
 
 type Config struct {
-	Port      int
-	PublicURL string
-	LogLevel  slog.Level
-	LogFormat string
+	Port                int
+	PublicURL           string
+	DefaultNavidromeURL string
+	LogLevel            slog.Level
+	LogFormat           string
 }
 
 var logLevels = map[string]slog.Level{
@@ -47,6 +48,12 @@ func Load(getenv func(string) string) (Config, error) {
 	}
 	cfg.Port = port
 	cfg.PublicURL = strings.TrimRight(get("PUBLIC_URL", ""), "/")
+
+	navURL := get("NAVIDROME_URL", "")
+	if navURL == "" {
+		navURL = get("DEFAULT_NAVIDROME_URL", "")
+	}
+	cfg.DefaultNavidromeURL = strings.TrimRight(navURL, "/")
 
 	level, ok := logLevels[strings.ToLower(get("LOG_LEVEL", "info"))]
 	if !ok {

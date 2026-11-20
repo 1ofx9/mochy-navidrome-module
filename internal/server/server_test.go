@@ -316,6 +316,26 @@ func TestHealth(t *testing.T) {
 	if resp.Status != "ok" || resp.Version != "1.0.0" {
 		t.Fatalf("unexpected health response: %+v", resp)
 	}
+
+	q := rig.credQuery()
+	req = httptest.NewRequest(http.MethodGet, "/health?"+q.Encode(), nil)
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("credential health status = %d, want 200", rec.Code)
+	}
+
+	badQ := url.Values{
+		"navidrome_url":      {rig.fake.URL},
+		"navidrome_user":     {"wrong"},
+		"navidrome_password": {"wrong"},
+	}
+	req = httptest.NewRequest(http.MethodGet, "/health?"+badQ.Encode(), nil)
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("wrong credential health status = %d, want 401", rec.Code)
+	}
 }
 
 func TestCORS(t *testing.T) {

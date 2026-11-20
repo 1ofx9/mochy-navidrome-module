@@ -139,6 +139,7 @@ All environment variables are optional with sensible defaults:
 |---|---|---|
 | `PORT` | `8090` | HTTP listening port |
 | `PUBLIC_URL` | *(empty)* | Optional public base URL (e.g. `https://music-module.example.com`). Autodetected from `Host` header if empty. |
+| `NAVIDROME_URL` | *(empty)* | Optional default Navidrome server URL pre-filled in Mochy Music settings (e.g. `https://music.example.com`). |
 | `LOG_LEVEL` | `info` | Log verbosity (`debug`, `info`, `warn`, `error`) |
 | `LOG_FORMAT` | `text` | Log format (`text` or `json`) |
 
@@ -174,4 +175,4 @@ go run ./cmd/module
 
 ## License
 
-MIT
+This project is licensed under the [MIT License](LICENSE).

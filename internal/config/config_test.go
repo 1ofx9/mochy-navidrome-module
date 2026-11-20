@@ -23,10 +23,11 @@ func TestConfigLoadDefaults(t *testing.T) {
 
 func TestConfigLoadCustom(t *testing.T) {
 	env := map[string]string{
-		"PORT":       "9000",
-		"PUBLIC_URL": "https://mochy.example.com/",
-		"LOG_LEVEL":  "debug",
-		"LOG_FORMAT": "json",
+		"PORT":          "9000",
+		"PUBLIC_URL":    "https://mochy.example.com/",
+		"NAVIDROME_URL": "https://music.example.com/",
+		"LOG_LEVEL":     "debug",
+		"LOG_FORMAT":    "json",
 	}
 	cfg, err := Load(func(k string) string { return env[k] })
 	if err != nil {
@@ -37,6 +38,9 @@ func TestConfigLoadCustom(t *testing.T) {
 	}
 	if cfg.PublicURL != "https://mochy.example.com" {
 		t.Errorf("PublicURL = %q, want 'https://mochy.example.com'", cfg.PublicURL)
+	}
+	if cfg.DefaultNavidromeURL != "https://music.example.com" {
+		t.Errorf("DefaultNavidromeURL = %q, want 'https://music.example.com'", cfg.DefaultNavidromeURL)
 	}
 	if cfg.LogLevel != slog.LevelDebug {
 		t.Errorf("LogLevel = %v, want Debug", cfg.LogLevel)

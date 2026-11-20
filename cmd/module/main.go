@@ -20,7 +20,7 @@ import (
 	"github.com/1ofx9/mochy-navidrome-module/internal/server"
 )
 
-var version = "1.0.0"
+var version = "1.1.0"
 
 const shutdownGrace = 10 * time.Second
 
@@ -136,10 +136,25 @@ func (h *prettyHandler) Handle(_ context.Context, r slog.Record) error {
 		})
 
 		statusLabel := status
-		if status == "200" {
+		switch status {
+		case "200":
 			statusLabel = "200 OK"
+		case "206":
+			statusLabel = "206 Partial"
+		case "304":
+			statusLabel = "304 Cache"
+		case "400":
+			statusLabel = "400 BadReq"
+		case "401":
+			statusLabel = "401 Unauth"
+		case "404":
+			statusLabel = "404 NotFound"
+		case "500":
+			statusLabel = "500 Err"
+		case "502":
+			statusLabel = "502 BadGW"
 		}
-		line := fmt.Sprintf("  %s  %s  %-4s %-22s %-7s %7s  %s", timeStr, levelStr, method, path, statusLabel, size, duration)
+		line := fmt.Sprintf("  %s  %s  %-4s %-34s %-11s %7s  %s", timeStr, levelStr, method, path, statusLabel, size, duration)
 		if extra != "" {
 			line += "  " + extra
 		}
@@ -189,9 +204,10 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger, listening f
 	defer listener.Close()
 
 	srvHandler := server.New(server.Options{
-		PublicURL: cfg.PublicURL,
-		Version:   version,
-		Log:       log,
+		PublicURL:           cfg.PublicURL,
+		DefaultNavidromeURL: cfg.DefaultNavidromeURL,
+		Version:             version,
+		Log:                 log,
 	})
 
 	srv := &http.Server{

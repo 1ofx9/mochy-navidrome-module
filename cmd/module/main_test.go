@@ -18,7 +18,7 @@ func TestVersionFlag(t *testing.T) {
 	if code != 0 {
 		t.Fatalf("exit code = %d, want 0", code)
 	}
-	if !strings.Contains(buf.String(), "mochy-navidrome-module v1.0.0") {
+	if !strings.Contains(buf.String(), "mochy-navidrome-module v"+version) {
 		t.Fatalf("unexpected version output: %s", buf.String())
 	}
 }

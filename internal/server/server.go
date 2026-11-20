@@ -10,10 +10,11 @@ import (
 )
 
 type Options struct {
-	PublicURL string
-	Version   string
-	Log       *slog.Logger
-	ArtCache  *ArtCache
+	PublicURL           string
+	DefaultNavidromeURL string
+	Version             string
+	Log                 *slog.Logger
+	ArtCache            *ArtCache
 }
 
 type Server struct {
@@ -145,12 +146,22 @@ func (s *Server) withLogging(next http.Handler) http.Handler {
 		var extra string
 		if q := r.URL.Query().Get("q"); q != "" && r.URL.Path == "/search" {
 			extra = fmt.Sprintf("q=%q", q)
-		} else if strings.HasPrefix(r.URL.Path, "/stream/") || strings.HasPrefix(r.URL.Path, "/audio/") {
+		} else if strings.HasPrefix(r.URL.Path, "/stream/") {
 			quality := r.URL.Query().Get("quality")
 			if quality == "" {
 				quality = "lossless"
 			}
-			extra = fmt.Sprintf("(%s)", quality)
+			extra = fmt.Sprintf("[resolve stream] (%s)", quality)
+		} else if strings.HasPrefix(r.URL.Path, "/audio/") {
+			quality := r.URL.Query().Get("quality")
+			if quality == "" {
+				quality = "lossless"
+			}
+			if status == http.StatusPartialContent {
+				extra = fmt.Sprintf("[seek range] (%s)", quality)
+			} else {
+				extra = fmt.Sprintf("[audio stream] (%s)", quality)
+			}
 		}
 
 		s.log.Info("request",
