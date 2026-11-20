@@ -1,6 +1,6 @@
 services:
   mochy-navidrome-module:
-    image: ghcr.io/1ofx9/mochy-navidrome-module:1.2.1
+    image: ghcr.io/1ofx9/mochy-navidrome-module:latest
     container_name: mochy-navidrome-module
     restart: unless-stopped
     ports:

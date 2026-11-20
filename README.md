@@ -31,7 +31,7 @@ Copy [`compose.example.yml`](compose.example.yml) or create a `compose.yml`:
 ```yaml
 services:
   mochy-navidrome-module:
-    image: ghcr.io/1ofx9/mochy-navidrome-module:1.2.1
+    image: ghcr.io/1ofx9/mochy-navidrome-module:latest
     container_name: mochy-navidrome-module
     restart: unless-stopped
     ports:
@@ -62,7 +62,7 @@ docker run -d \
   --restart unless-stopped \
   -p 8090:8090 \
   -e LOG_LEVEL=info \
-  ghcr.io/1ofx9/mochy-navidrome-module:1.2.1
+  ghcr.io/1ofx9/mochy-navidrome-module:latest
 ```
 
 ### Health Check
