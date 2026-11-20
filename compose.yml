@@ -1,0 +1,16 @@
+services:
+  mochy-navidrome-module:
+    image: ghcr.io/1ofx9/mochy-navidrome-module:latest
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: mochy-navidrome-module
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      - PORT=8090
+      - LOG_LEVEL=info
+      - LOG_FORMAT=text
+      # Optional: set public base URL if behind a reverse proxy
+      # - PUBLIC_URL=https://music-module.example.com
