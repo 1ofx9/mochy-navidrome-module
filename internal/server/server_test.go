@@ -450,3 +450,22 @@ func TestInvalidNavidromeURLRejected(t *testing.T) {
 		}
 	}
 }
+
+func TestIcon(t *testing.T) {
+	rig := newTestRig(t)
+	handler := rig.server.Handler()
+
+	req := httptest.NewRequest(http.MethodGet, "/icon.png", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("icon status = %d, want 200", rec.Code)
+	}
+	if ct := rec.Header().Get("Content-Type"); ct != "image/png" {
+		t.Fatalf("content-type = %s, want image/png", ct)
+	}
+	if rec.Body.Len() == 0 {
+		t.Fatal("empty icon body")
+	}
+}

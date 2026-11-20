@@ -1,6 +1,7 @@
 package server
 
 import (
+	_ "embed"
 	"fmt"
 	"log/slog"
 	"net/http"
@@ -8,6 +9,9 @@ import (
 	"strings"
 	"time"
 )
+
+//go:embed icon.png
+var navidromeIcon []byte
 
 type Options struct {
 	PublicURL           string
@@ -33,7 +37,7 @@ func New(o Options) *Server {
 		cache = NewArtCache(defaultArtMaxItems, defaultArtMaxBytes)
 	}
 	if o.Version == "" {
-		o.Version = "1.2.1"
+		o.Version = "1.2.2"
 	}
 	return &Server{
 		Options:  o,
@@ -45,6 +49,7 @@ func New(o Options) *Server {
 func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 
+	mux.HandleFunc("GET /icon.png", s.serveIcon)
 	mux.HandleFunc("GET /manifest.json", s.serveManifest)
 	mux.HandleFunc("GET /manifest", s.serveManifest)
 	mux.HandleFunc("GET /search", s.serveSearch)

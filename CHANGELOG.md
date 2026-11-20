@@ -4,6 +4,22 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.2.2] - 2026-11-20
+
+### Added
+
+- Embedded high-resolution official Navidrome logo served directly at `/icon.png` with 1-year cache headers, replacing the placeholder gray letter icon in Mochy.
+- Added dynamic cover art resolution query (`?size=`) with a higher default of 800px for sharper art on AMOLED displays.
+- Added customizable search count query (`?count=`) and increased default result limit from 10 to 20 tracks.
+
+### Fixed
+
+- Masked password input field with `type: "password"` in module settings so passwords are never shown in plaintext.
+
+### Changed
+
+- Reordered audio quality options to place `Hi-Res (24-bit)` at the top of the quality list.
+
 ## [1.2.1] - 2026-11-20
 
 ### Changed

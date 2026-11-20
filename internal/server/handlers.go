@@ -3,6 +3,7 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -82,6 +83,15 @@ type healthResponse struct {
 	Version string `json:"version"`
 }
 
+func (s *Server) serveIcon(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "image/png")
+	w.Header().Set("Cache-Control", "public, max-age=31536000, immutable")
+	w.WriteHeader(http.StatusOK)
+	if r.Method != http.MethodHead {
+		_, _ = w.Write(navidromeIcon)
+	}
+}
+
 func (s *Server) serveRoot(w http.ResponseWriter, r *http.Request) {
 	s.serveManifest(w, r)
 }
@@ -110,7 +120,7 @@ func (s *Server) serveManifest(w http.ResponseWriter, r *http.Request) {
 		settingDefinition{
 			Key:         "navidrome_password",
 			Label:       "Password",
-			Type:        "text",
+			Type:        "password",
 			Hint:        "password",
 			Description: "Navidrome password",
 			Default:     "",
@@ -119,11 +129,11 @@ func (s *Server) serveManifest(w http.ResponseWriter, r *http.Request) {
 			Key:         "quality",
 			Label:       "Audio Quality",
 			Type:        "select",
-			Default:     "lossless",
+			Default:     "hires",
 			Description: "Preferred audio quality",
 			Options: []option{
-				{Value: "lossless", Label: "Lossless (FLAC/ALAC)"},
-				{Value: "hires", Label: "Hi-Res"},
+				{Value: "hires", Label: "Hi-Res (24-bit FLAC)"},
+				{Value: "lossless", Label: "Lossless (CD-quality FLAC)"},
 				{Value: "high", Label: "High (320 kbps)"},
 				{Value: "low", Label: "Low (128 kbps)"},
 			},
@@ -136,7 +146,7 @@ func (s *Server) serveManifest(w http.ResponseWriter, r *http.Request) {
 		Version:     s.Version,
 		Description: "Stream music directly from your Navidrome server",
 		Author:      "1ofx9",
-		Icon:        "https://www.navidrome.org/favicon.png",
+		Icon:        s.baseURL(r) + "/icon.png",
 		Type:        "web",
 		Resources:   []string{"search", "stream", "lyrics", "metadata"},
 		Settings:    settings,
@@ -191,7 +201,13 @@ func (s *Server) serveSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	songs, err := client.Search(r.Context(), query, 10)
+	count := 20
+	if cStr := r.URL.Query().Get("count"); cStr != "" {
+		if cInt, err := strconv.Atoi(cStr); err == nil && cInt > 0 && cInt <= 100 {
+			count = cInt
+		}
+	}
+	songs, err := client.Search(r.Context(), query, count)
 	if err != nil {
 		s.log.Error("search failed", "query", query, "error", err)
 		writeJSON(w, http.StatusOK, searchResponse{Tracks: []trackItem{}})
@@ -340,8 +356,15 @@ func (s *Server) serveArt(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	size := 800
+	if sStr := r.URL.Query().Get("size"); sStr != "" {
+		if sInt, err := strconv.Atoi(sStr); err == nil && sInt > 0 && sInt <= 2048 {
+			size = sInt
+		}
+	}
+
 	baseURL := strings.TrimSpace(r.URL.Query().Get("navidrome_url"))
-	cacheKey := baseURL + ":" + id
+	cacheKey := fmt.Sprintf("%s:%s:%d", baseURL, id, size)
 
 	if s.artCache != nil {
 		if item, ok := s.artCache.Get(cacheKey); ok {
@@ -350,7 +373,7 @@ func (s *Server) serveArt(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	body, ct, etag, lastMod, err := client.FetchArt(r.Context(), id, 600)
+	body, ct, etag, lastMod, err := client.FetchArt(r.Context(), id, size)
 	if err != nil {
 		if errors.Is(err, subsonic.ErrNotFound) {
 			http.NotFound(w, r)
