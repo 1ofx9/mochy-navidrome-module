@@ -37,7 +37,7 @@ func New(o Options) *Server {
 		cache = NewArtCache(defaultArtMaxItems, defaultArtMaxBytes)
 	}
 	if o.Version == "" {
-		o.Version = "1.2.2"
+		o.Version = "1.3.0"
 	}
 	return &Server{
 		Options:  o,
