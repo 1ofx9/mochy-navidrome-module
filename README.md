@@ -11,7 +11,7 @@ A lightweight, stateless web module connecting [Navidrome](https://www.navidrome
 
 ## Features
 
-- **Mochy Web Module Spec**: Implements `/manifest.json`, `/search`, `/stream/{id}`, `/audio/{id}`, `/art/{id}`, `/lyrics`, `/metadata`, and `/health`.
+- **Mochy Web Module Spec**: Implements `/manifest.json`, `/icon.png`, `/search`, `/stream/{id}`, `/audio/{id}`, `/art/{id}`, `/lyrics`, `/metadata`, and `/health`.
 - **Client-Side Auth**: Server URL, username, and password are saved in Mochy Music on your phone and passed with requests.
 - **Docker Auto-Discovery**: Automatically discovers Navidrome on the same Docker network (`http://navidrome:4533`) and auto-hides the "Server URL" box in the app.
 - **Continuous Audio Streaming**: Unbounded stream proxy supporting HTTP `Range` requests and `206 Partial Content` seeking without buffer cutoffs.
@@ -120,7 +120,7 @@ PUBLIC_URL=https://music-module.example.com
    - **Server URL**: Enter your Navidrome server address *(this field is automatically hidden if `NAVIDROME_URL` is set or auto-discovered on Docker)*.
    - **Username**: Your Navidrome username.
    - **Password**: Your Navidrome password.
-   - **Audio Quality**: Preferred streaming quality (`lossless`, `hires`, `high`, or `low`).
+   - **Audio Quality**: Preferred streaming quality (`hires`, `lossless`, `high`, or `low`).
 6. Search and stream tracks from your Navidrome library directly in Mochy Music.
 
 ---
