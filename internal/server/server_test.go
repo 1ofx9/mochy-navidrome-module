@@ -469,3 +469,33 @@ func TestIcon(t *testing.T) {
 		t.Fatal("empty icon body")
 	}
 }
+
+func TestManifestCustomModuleIDAndName(t *testing.T) {
+	srv := New(Options{
+		ModuleID:   "navidrome-family",
+		ModuleName: "Navidrome (Family)",
+		Version:    "1.4.0",
+	})
+	handler := srv.Handler()
+
+	req := httptest.NewRequest(http.MethodGet, "/manifest.json", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+	var m manifestResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &m); err != nil {
+		t.Fatalf("failed to parse manifest json: %v", err)
+	}
+	if m.ID != "navidrome-family" {
+		t.Errorf("ID = %q, want navidrome-family", m.ID)
+	}
+	if m.Name != "Navidrome (Family)" {
+		t.Errorf("Name = %q, want 'Navidrome (Family)'", m.Name)
+	}
+	if !strings.Contains(m.Description, "Navidrome (Family)") {
+		t.Errorf("Description = %q, want it to contain 'Navidrome (Family)'", m.Description)
+	}
+}

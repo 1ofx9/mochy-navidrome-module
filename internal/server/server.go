@@ -16,6 +16,8 @@ var navidromeIcon []byte
 type Options struct {
 	PublicURL           string
 	DefaultNavidromeURL string
+	ModuleID            string
+	ModuleName          string
 	Version             string
 	Log                 *slog.Logger
 	ArtCache            *ArtCache
@@ -36,8 +38,14 @@ func New(o Options) *Server {
 	if cache == nil {
 		cache = NewArtCache(defaultArtMaxItems, defaultArtMaxBytes)
 	}
+	if o.ModuleID == "" {
+		o.ModuleID = "mochy-navidrome"
+	}
+	if o.ModuleName == "" {
+		o.ModuleName = "Navidrome"
+	}
 	if o.Version == "" {
-		o.Version = "1.3.0"
+		o.Version = "1.4.0"
 	}
 	return &Server{
 		Options:  o,

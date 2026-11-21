@@ -18,6 +18,7 @@ A lightweight, stateless web module connecting [Navidrome](https://www.navidrome
 - **Lossless & Hi-Res Format Badging**: Resolves audio codec, sample rate, bit depth, and player badges (`Hi-Res Lossless`, `Lossless`, `High`, `Low`).
 - **Synchronized LRC Lyrics**: Fetches timed lyrics from Navidrome via OpenSubsonic `getLyricsBySongId` with fallback to standard Subsonic lyrics.
 - **In-Memory Artwork Cache**: Thread-safe LRU cover art cache with SHA-256 ETags and HTTP 304 revalidation.
+- **Multi-Instance Support**: Configurable `MODULE_ID` and `MODULE_NAME` to serve multiple Navidrome servers side-by-side in Mochy Music.
 - **Zero Third-Party Dependencies**: Pure Go standard library implementation.
 
 ---
@@ -71,7 +72,7 @@ Verify that the module is healthy:
 
 ```bash
 curl http://localhost:8090/health
-# {"status":"ok","version":"1.3.0"}
+# {"status":"ok","version":"1.4.0"}
 ```
 
 ---
@@ -134,8 +135,51 @@ Refer to [`.env.example`](.env.example) for environment variable defaults:
 | `PORT` | `8090` | HTTP port the module listens on. |
 | `PUBLIC_URL` | *(empty)* | Optional public base URL. Detected from the `Host` header if empty. |
 | `NAVIDROME_URL` | *(empty)* | Optional default Navidrome URL. Hides the "Server URL" input in Mochy when set. |
+| `MODULE_ID` | `mochy-navidrome` | Unique module identifier. Change this when running multiple instances. |
+| `MODULE_NAME` | `Navidrome` | Display name shown in Mochy Music (e.g. `Navidrome (Family)`). |
 | `LOG_LEVEL` | `info` | Log verbosity: `debug`, `info`, `warn`, `error`. |
 | `LOG_FORMAT` | `text` | Log format: `text` or `json`. |
+
+---
+
+## Multi-Server Setup (Multiple Navidrome Instances)
+
+You can serve multiple Navidrome servers on the same host into Mochy Music simultaneously by assigning each container a unique `MODULE_ID`, `MODULE_NAME`, and port:
+
+```yaml
+services:
+  # Instance 1: Personal Library
+  module-personal:
+    image: ghcr.io/1ofx9/mochy-navidrome-module:latest
+    container_name: mochy-module-personal
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      - PORT=8090
+      - MODULE_ID=navidrome-personal
+      - MODULE_NAME=Navidrome (Personal)
+      - NAVIDROME_URL=http://navidrome-personal:4533
+    networks:
+      - homelab
+
+  # Instance 2: Family Library
+  module-family:
+    image: ghcr.io/1ofx9/mochy-navidrome-module:latest
+    container_name: mochy-module-family
+    restart: unless-stopped
+    ports:
+      - "8091:8091"
+    environment:
+      - PORT=8091
+      - MODULE_ID=navidrome-family
+      - MODULE_NAME=Navidrome (Family)
+      - NAVIDROME_URL=http://navidrome-family:4533
+    networks:
+      - homelab
+```
+
+Both instances will appear as separate music providers side-by-side in Mochy Music under **Play from**, allowing one-tap switching between libraries.
 
 ---
 

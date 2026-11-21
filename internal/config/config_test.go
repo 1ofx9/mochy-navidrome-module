@@ -19,6 +19,12 @@ func TestConfigLoadDefaults(t *testing.T) {
 	if cfg.LogFormat != "text" {
 		t.Errorf("LogFormat = %q, want text", cfg.LogFormat)
 	}
+	if cfg.ModuleID != "mochy-navidrome" {
+		t.Errorf("ModuleID = %q, want mochy-navidrome", cfg.ModuleID)
+	}
+	if cfg.ModuleName != "Navidrome" {
+		t.Errorf("ModuleName = %q, want Navidrome", cfg.ModuleName)
+	}
 }
 
 func TestConfigLoadCustom(t *testing.T) {
@@ -28,6 +34,8 @@ func TestConfigLoadCustom(t *testing.T) {
 		"NAVIDROME_URL": "https://music.example.com/",
 		"LOG_LEVEL":     "debug",
 		"LOG_FORMAT":    "json",
+		"MODULE_ID":     "navidrome-family",
+		"MODULE_NAME":   "Navidrome Family",
 	}
 	cfg, err := Load(func(k string) string { return env[k] })
 	if err != nil {
@@ -47,6 +55,12 @@ func TestConfigLoadCustom(t *testing.T) {
 	}
 	if cfg.LogFormat != "json" {
 		t.Errorf("LogFormat = %q, want json", cfg.LogFormat)
+	}
+	if cfg.ModuleID != "navidrome-family" {
+		t.Errorf("ModuleID = %q, want navidrome-family", cfg.ModuleID)
+	}
+	if cfg.ModuleName != "Navidrome Family" {
+		t.Errorf("ModuleName = %q, want 'Navidrome Family'", cfg.ModuleName)
 	}
 }
 

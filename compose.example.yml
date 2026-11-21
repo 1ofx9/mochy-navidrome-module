@@ -16,6 +16,11 @@ services:
       # Optional: Pre-fill Navidrome server address and auto-hide the "Server URL" box in Mochy
       # - NAVIDROME_URL=https://music.example.com
 
+      # Optional: Unique Module ID and Name for multi-server setups
+      # - MODULE_ID=mochy-navidrome
+      # - MODULE_NAME=Navidrome
+
+
     # Optional: If running on the same Docker network as Navidrome,
     # the module automatically discovers http://navidrome:4533 on startup.
     # networks:

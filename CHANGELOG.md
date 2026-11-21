@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.4.0] - 2026-11-21
+
+### Added
+
+- Support for `MODULE_ID` (default: `mochy-navidrome`) and `MODULE_NAME` (default: `Navidrome`) environment variables to run multiple module instances serving different Navidrome servers simultaneously in Mochy Music.
+- Dynamic startup banner and manifest generation reflecting custom module names.
+- Multi-instance Docker Compose reference and documentation.
+
 ## [1.3.0] - 2026-11-20
 
 ### Added

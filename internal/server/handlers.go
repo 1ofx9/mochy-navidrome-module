@@ -141,10 +141,10 @@ func (s *Server) serveManifest(w http.ResponseWriter, r *http.Request) {
 	)
 
 	manifest := manifestResponse{
-		ID:          "mochy-navidrome",
-		Name:        "Navidrome",
+		ID:          s.ModuleID,
+		Name:        s.ModuleName,
 		Version:     s.Version,
-		Description: "Stream music directly from your Navidrome server",
+		Description: fmt.Sprintf("Stream music directly from your %s server", s.ModuleName),
 		Author:      "1ofx9",
 		Icon:        s.baseURL(r) + "/icon.png",
 		Type:        "web",

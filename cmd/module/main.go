@@ -20,7 +20,7 @@ import (
 	"github.com/1ofx9/mochy-navidrome-module/internal/server"
 )
 
-var version = "1.3.0"
+var version = "1.4.0"
 
 const shutdownGrace = 10 * time.Second
 
@@ -192,6 +192,8 @@ func healthcheck(url string) int {
 func serve(ctx context.Context, cfg config.Config, log *slog.Logger, listening func(net.Addr)) error {
 	log.Info("starting mochy-navidrome-module",
 		"version", version,
+		"module_id", cfg.ModuleID,
+		"module_name", cfg.ModuleName,
 		"port", cfg.Port,
 		"public_url", cfg.PublicURL,
 		"log_level", cfg.LogLevel.String(),
@@ -213,6 +215,8 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger, listening f
 	srvHandler := server.New(server.Options{
 		PublicURL:           cfg.PublicURL,
 		DefaultNavidromeURL: cfg.DefaultNavidromeURL,
+		ModuleID:            cfg.ModuleID,
+		ModuleName:          cfg.ModuleName,
 		Version:             version,
 		Log:                 log,
 	})
@@ -237,7 +241,11 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger, listening f
 
 	if cfg.LogFormat != "json" {
 		fmt.Fprintf(os.Stderr, "\n")
-		fmt.Fprintf(os.Stderr, "  ▲  MOCHY NAVIDROME MODULE  v%s\n\n", version)
+		title := "MOCHY NAVIDROME MODULE"
+		if cfg.ModuleName != "Navidrome" && cfg.ModuleName != "" {
+			title = fmt.Sprintf("MOCHY NAVIDROME MODULE (%s)", cfg.ModuleName)
+		}
+		fmt.Fprintf(os.Stderr, "  ▲  %s  v%s\n\n", title, version)
 		fmt.Fprintf(os.Stderr, "  ➜  Local:     %s\n", manifestLocal)
 		if manifestLAN != "" {
 			fmt.Fprintf(os.Stderr, "  ➜  Network:   %s\n", manifestLAN)
@@ -255,6 +263,8 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger, listening f
 
 	attrs := []any{
 		"addr", listener.Addr().String(),
+		"module_id", cfg.ModuleID,
+		"module_name", cfg.ModuleName,
 		"local_manifest", manifestLocal,
 	}
 	if manifestLAN != "" {

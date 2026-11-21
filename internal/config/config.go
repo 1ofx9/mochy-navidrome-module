@@ -13,6 +13,8 @@ type Config struct {
 	Port                int
 	PublicURL           string
 	DefaultNavidromeURL string
+	ModuleID            string
+	ModuleName          string
 	LogLevel            slog.Level
 	LogFormat           string
 }
@@ -54,6 +56,9 @@ func Load(getenv func(string) string) (Config, error) {
 		navURL = get("DEFAULT_NAVIDROME_URL", "")
 	}
 	cfg.DefaultNavidromeURL = strings.TrimRight(navURL, "/")
+
+	cfg.ModuleID = get("MODULE_ID", "mochy-navidrome")
+	cfg.ModuleName = get("MODULE_NAME", "Navidrome")
 
 	level, ok := logLevels[strings.ToLower(get("LOG_LEVEL", "info"))]
 	if !ok {
