@@ -45,7 +45,7 @@ func New(o Options) *Server {
 		o.ModuleName = "Navidrome"
 	}
 	if o.Version == "" {
-		o.Version = "1.4.0"
+		o.Version = "1.4.1"
 	}
 	return &Server{
 		Options:  o,
@@ -58,6 +58,7 @@ func (s *Server) Handler() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /icon.png", s.serveIcon)
+	mux.HandleFunc("GET /logo.png", s.serveIcon)
 	mux.HandleFunc("GET /manifest.json", s.serveManifest)
 	mux.HandleFunc("GET /manifest", s.serveManifest)
 	mux.HandleFunc("GET /search", s.serveSearch)

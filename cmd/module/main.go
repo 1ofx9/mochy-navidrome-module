@@ -20,7 +20,7 @@ import (
 	"github.com/1ofx9/mochy-navidrome-module/internal/server"
 )
 
-var version = "1.4.0"
+var version = "1.4.1"
 
 const shutdownGrace = 10 * time.Second
 

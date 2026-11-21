@@ -24,6 +24,7 @@ type manifestResponse struct {
 	Description string              `json:"description"`
 	Author      string              `json:"author"`
 	Icon        string              `json:"icon,omitempty"`
+	Logo        string              `json:"logo,omitempty"`
 	Type        string              `json:"type"`
 	Resources   []string            `json:"resources"`
 	Settings    []settingDefinition `json:"settings"`
@@ -33,6 +34,12 @@ type settingDefinition struct {
 	Key         string   `json:"key"`
 	Label       string   `json:"label"`
 	Type        string   `json:"type"`
+	InputType   string   `json:"inputType,omitempty"`
+	Format      string   `json:"format,omitempty"`
+	Secure      bool     `json:"secure,omitempty"`
+	Secret      bool     `json:"secret,omitempty"`
+	Password    bool     `json:"password,omitempty"`
+	Masked      bool     `json:"masked,omitempty"`
 	Hint        string   `json:"hint,omitempty"`
 	Description string   `json:"description,omitempty"`
 	Default     string   `json:"default,omitempty"`
@@ -45,12 +52,17 @@ type option struct {
 }
 
 type trackItem struct {
-	ID       string `json:"id"`
-	Title    string `json:"title"`
-	Artist   string `json:"artist"`
-	Album    string `json:"album"`
-	Duration int    `json:"duration"`
-	ISRC     string `json:"isrc,omitempty"`
+	ID         string `json:"id"`
+	Title      string `json:"title"`
+	Artist     string `json:"artist"`
+	Album      string `json:"album"`
+	Duration   int    `json:"duration"`
+	ArtworkURL string `json:"artworkUrl,omitempty"`
+	Artwork    string `json:"artwork,omitempty"`
+	CoverURL   string `json:"coverUrl,omitempty"`
+	AlbumCover string `json:"albumCover,omitempty"`
+	Thumbnail  string `json:"thumbnail,omitempty"`
+	ISRC       string `json:"isrc,omitempty"`
 }
 
 type searchResponse struct {
@@ -121,6 +133,12 @@ func (s *Server) serveManifest(w http.ResponseWriter, r *http.Request) {
 			Key:         "navidrome_password",
 			Label:       "Password",
 			Type:        "password",
+			InputType:   "password",
+			Format:      "password",
+			Secure:      true,
+			Secret:      true,
+			Password:    true,
+			Masked:      true,
 			Hint:        "password",
 			Description: "Navidrome password",
 			Default:     "",
@@ -147,6 +165,7 @@ func (s *Server) serveManifest(w http.ResponseWriter, r *http.Request) {
 		Description: fmt.Sprintf("Stream music directly from your %s server", s.ModuleName),
 		Author:      "1ofx9",
 		Icon:        s.baseURL(r) + "/icon.png",
+		Logo:        s.baseURL(r) + "/icon.png",
 		Type:        "web",
 		Resources:   []string{"search", "stream", "lyrics", "metadata"},
 		Settings:    settings,
@@ -214,15 +233,30 @@ func (s *Server) serveSearch(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	q := r.URL.Query()
 	tracks := make([]trackItem, 0, len(songs))
 	for _, song := range songs {
-		tracks = append(tracks, trackItem{
+		item := trackItem{
 			ID:       song.ID,
 			Title:    song.Title,
 			Artist:   song.EffectiveArtist(),
 			Album:    song.Album,
 			Duration: song.Duration,
-		})
+		}
+		if song.CoverArt != "" {
+			artParams := url.Values{
+				"navidrome_url":      {q.Get("navidrome_url")},
+				"navidrome_user":     {q.Get("navidrome_user")},
+				"navidrome_password": {q.Get("navidrome_password")},
+			}
+			artURL := s.baseURL(r) + "/art/" + url.PathEscape(song.CoverArt) + "?" + artParams.Encode()
+			item.ArtworkURL = artURL
+			item.Artwork = artURL
+			item.CoverURL = artURL
+			item.AlbumCover = artURL
+			item.Thumbnail = artURL
+		}
+		tracks = append(tracks, item)
 	}
 
 	writeJSON(w, http.StatusOK, searchResponse{Tracks: tracks})

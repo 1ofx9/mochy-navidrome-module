@@ -4,6 +4,14 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.4.1] - 2026-11-21
+
+### Added
+
+- Added album cover art URLs to `/search` results across all common aliases (`coverUrl`, `albumCover`, `artworkUrl`, `artwork`, and `thumbnail`), resolving blank cover art placeholders in Mochy's search and module test screens.
+- Added `logo` attribute to `/manifest.json` and a `/logo.png` route alias alongside `/icon.png` to fix icon rendering in Mochy's playback source selector sheet.
+- Added comprehensive password field masking hints and attributes (`inputType: "password"`, `format: "password"`, `secure: true`, `secret: true`, `password: true`, `masked: true`) in `/manifest.json`.
+
 ## [1.4.0] - 2026-11-21
 
 ### Added

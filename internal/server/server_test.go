@@ -57,11 +57,21 @@ func TestManifest(t *testing.T) {
 		if m.ID != "mochy-navidrome" || m.Name != "Navidrome" || m.Type != "web" {
 			t.Fatalf("unexpected manifest fields: %+v", m)
 		}
+		if m.Icon != "http://localhost:8090/icon.png" || m.Logo != "http://localhost:8090/icon.png" {
+			t.Fatalf("unexpected icon/logo fields: icon=%q, logo=%q", m.Icon, m.Logo)
+		}
 		if len(m.Resources) != 4 {
 			t.Fatalf("resources length = %d, want 4", len(m.Resources))
 		}
 		if len(m.Settings) != 4 {
 			t.Fatalf("settings length = %d, want 4", len(m.Settings))
+		}
+		for _, s := range m.Settings {
+			if s.Key == "navidrome_password" {
+				if s.Type != "password" || s.InputType != "password" || s.Format != "password" || !s.Secure || !s.Secret || !s.Password || !s.Masked {
+					t.Fatalf("expected password setting with masking attributes, got: %+v", s)
+				}
+			}
 		}
 	}
 }
@@ -163,6 +173,14 @@ func TestSearch(t *testing.T) {
 	}
 	if len(resp.Tracks) != 1 || resp.Tracks[0].Title != "New Religion" {
 		t.Fatalf("unexpected search tracks: %+v", resp.Tracks)
+	}
+	track := resp.Tracks[0]
+	if !strings.Contains(track.CoverURL, "/art/al-1") ||
+		track.CoverURL != track.ArtworkURL ||
+		track.CoverURL != track.Artwork ||
+		track.CoverURL != track.AlbumCover ||
+		track.CoverURL != track.Thumbnail {
+		t.Fatalf("unexpected search artwork fields: %+v", track)
 	}
 }
 
@@ -455,18 +473,20 @@ func TestIcon(t *testing.T) {
 	rig := newTestRig(t)
 	handler := rig.server.Handler()
 
-	req := httptest.NewRequest(http.MethodGet, "/icon.png", nil)
-	rec := httptest.NewRecorder()
-	handler.ServeHTTP(rec, req)
+	for _, endpoint := range []string{"/icon.png", "/logo.png"} {
+		req := httptest.NewRequest(http.MethodGet, endpoint, nil)
+		rec := httptest.NewRecorder()
+		handler.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusOK {
-		t.Fatalf("icon status = %d, want 200", rec.Code)
-	}
-	if ct := rec.Header().Get("Content-Type"); ct != "image/png" {
-		t.Fatalf("content-type = %s, want image/png", ct)
-	}
-	if rec.Body.Len() == 0 {
-		t.Fatal("empty icon body")
+		if rec.Code != http.StatusOK {
+			t.Fatalf("%s status = %d, want 200", endpoint, rec.Code)
+		}
+		if ct := rec.Header().Get("Content-Type"); ct != "image/png" {
+			t.Fatalf("%s content-type = %s, want image/png", endpoint, ct)
+		}
+		if rec.Body.Len() == 0 {
+			t.Fatalf("%s empty icon body", endpoint)
+		}
 	}
 }
 
@@ -474,7 +494,7 @@ func TestManifestCustomModuleIDAndName(t *testing.T) {
 	srv := New(Options{
 		ModuleID:   "navidrome-family",
 		ModuleName: "Navidrome (Family)",
-		Version:    "1.4.0",
+		Version:    "1.4.1",
 	})
 	handler := srv.Handler()
 

@@ -11,7 +11,7 @@ A lightweight, stateless web module connecting [Navidrome](https://www.navidrome
 
 ## Features
 
-- **Mochy Web Module Spec**: Implements `/manifest.json`, `/icon.png`, `/search`, `/stream/{id}`, `/audio/{id}`, `/art/{id}`, `/lyrics`, `/metadata`, and `/health`.
+- **Mochy Web Module Spec**: Implements `/manifest.json`, `/icon.png`, `/logo.png`, `/search`, `/stream/{id}`, `/audio/{id}`, `/art/{id}`, `/lyrics`, `/metadata`, and `/health`.
 - **Client-Side Auth**: Server URL, username, and password are saved in Mochy Music on your phone and passed with requests.
 - **Docker Auto-Discovery**: Automatically discovers Navidrome on the same Docker network (`http://navidrome:4533`) and auto-hides the "Server URL" box in the app.
 - **Continuous Audio Streaming**: Unbounded stream proxy supporting HTTP `Range` requests and `206 Partial Content` seeking without buffer cutoffs.
@@ -72,7 +72,7 @@ Verify that the module is healthy:
 
 ```bash
 curl http://localhost:8090/health
-# {"status":"ok","version":"1.4.0"}
+# {"status":"ok","version":"1.4.1"}
 ```
 
 ---
