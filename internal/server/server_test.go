@@ -542,7 +542,7 @@ func TestManifestCustomModuleIDAndName(t *testing.T) {
 	srv := New(Options{
 		ModuleID:   "navidrome-family",
 		ModuleName: "Navidrome (Family)",
-		Version:    "1.5.1",
+		Version:    "1.5.2",
 	})
 	handler := srv.Handler()
 
@@ -574,7 +574,7 @@ func TestMultiServerHandler(t *testing.T) {
 
 	srv := New(Options{
 		PublicURL: "https://mochy.subs-server.site",
-		Version:   "1.5.1",
+		Version:   "1.5.2",
 		Instances: []InstanceConfig{
 			{
 				Slug:                "music",

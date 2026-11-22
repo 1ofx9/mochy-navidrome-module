@@ -4,11 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.5.2] - 2026-11-22
+
 ### Changed
 
 - Updated health check (`/health`) and root index (`/`) response mode from `"mode": "multi-instance"` to `"mode": "multi-server"` with a `"servers"` list to align with single-container routing terminology.
-- Prevented potential SSRF by strictly enforcing server-configured upstream URLs (`NAVIDROME_URL` or `SERVERS`) and ignoring client-supplied `navidrome_url` query parameters when a host upstream is set.
-- Removed upstream server URLs from the public `/` root JSON response to avoid leaking internal hostnames or addresses.
+- Hardened security against SSRF by strictly binding to host-configured upstream URLs (`NAVIDROME_URL` or `SERVERS`), ignoring client-supplied `navidrome_url` parameters when a host upstream is set.
+- Removed internal upstream server URLs from the public `/` root JSON response.
 - Added a 10 MB payload limit to cover art responses in `FetchArt` to prevent unbounded memory allocation.
 
 ## [1.5.1] - 2026-11-22

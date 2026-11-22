@@ -54,7 +54,7 @@ func New(o Options) *Server {
 		o.ModuleName = "Navidrome"
 	}
 	if o.Version == "" {
-		o.Version = "1.5.1"
+		o.Version = "1.5.2"
 	}
 	return &Server{
 		Options:  o,

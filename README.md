@@ -72,7 +72,7 @@ Verify that the module is healthy:
 
 ```bash
 curl http://localhost:8090/health
-# {"status":"ok","version":"1.5.1"}
+# {"status":"ok","version":"1.5.2"}
 ```
 
 ---
