@@ -12,8 +12,8 @@ A lightweight, stateless web module connecting [Navidrome](https://www.navidrome
 ## Features
 
 - **Mochy Web Module Spec**: Implements `/manifest.json`, `/icon.png`, `/logo.png`, `/search`, `/stream/{id}`, `/audio/{id}`, `/art/{id}`, `/lyrics`, `/metadata`, and `/health`.
-- **Client-Side Auth**: Server URL, username, and password are saved in Mochy Music on your phone and passed with requests.
-- **Docker Auto-Discovery**: Automatically discovers Navidrome on the same Docker network (`http://navidrome:4533`) and auto-hides the "Server URL" box in the app.
+- **Client-Side Auth**: Username and password are saved in Mochy Music on your phone and passed with requests. Upstream server addresses are managed securely on the module.
+- **Docker Auto-Discovery**: Automatically discovers Navidrome on the same Docker network (`http://navidrome:4533`) when `NAVIDROME_URL` is unset.
 - **Continuous Audio Streaming**: Unbounded stream proxy supporting HTTP `Range` requests and `206 Partial Content` seeking without buffer cutoffs.
 - **Lossless & Hi-Res Format Badging**: Resolves audio codec, sample rate, bit depth, and player badges (`Hi-Res Lossless`, `Lossless`, `High`, `Low`).
 - **Synchronized LRC Lyrics**: Fetches timed lyrics from Navidrome via OpenSubsonic `getLyricsBySongId` with fallback to standard Subsonic lyrics.
@@ -72,7 +72,7 @@ Verify that the module is healthy:
 
 ```bash
 curl http://localhost:8090/health
-# {"status":"ok","version":"1.5.0"}
+# {"status":"ok","version":"1.5.1"}
 ```
 
 ---
@@ -118,7 +118,6 @@ PUBLIC_URL=https://music-module.example.com
    - **Reverse Proxy**: `https://music-module.example.com/manifest.json`
 4. Tap **Add**. Mochy will register the **Navidrome** module.
 5. In the module settings:
-   - **Server URL**: Enter your Navidrome server address *(this field is automatically hidden if `NAVIDROME_URL` is set or auto-discovered on Docker)*.
    - **Username**: Your Navidrome username.
    - **Password**: Your Navidrome password.
    - **Audio Quality**: Preferred streaming quality (`hires`, `lossless`, `high`, or `low`).
@@ -134,7 +133,7 @@ Refer to [`.env.example`](.env.example) for environment variable defaults:
 |---|---|---|
 | `PORT` | `8090` | HTTP port the module listens on. |
 | `PUBLIC_URL` | *(empty)* | Optional public base URL. Detected from the `Host` header if empty. |
-| `NAVIDROME_URL` | *(empty)* | Optional default Navidrome URL. Hides the "Server URL" input in Mochy when set. |
+| `NAVIDROME_URL` | *(empty)* | Upstream Navidrome server URL. Auto-discovered (`http://navidrome:4533`) on Docker if unset. |
 | `SERVERS` | *(empty)* | Optional multi-server configuration for single-container setups (e.g. `music:Navidrome:https://music.example.com,dolby:Navidrome (Dolby):https://dolby.example.com`). |
 | `MODULE_ID` | `mochy-navidrome` | Unique module identifier. Change this when running multiple instances. |
 | `MODULE_NAME` | `Navidrome` | Display name shown in Mochy Music (e.g. `Navidrome (Family)`). |

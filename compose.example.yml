@@ -13,7 +13,8 @@ services:
       # Optional: Public URL if behind a reverse proxy (e.g. Caddy, Nginx)
       # - PUBLIC_URL=https://music-module.example.com
 
-      # Optional: Pre-fill Navidrome server address and auto-hide the "Server URL" box in Mochy
+      # Upstream Navidrome server address (single-server mode)
+      # Not required if running on the same Docker network as Navidrome (auto-discovered at http://navidrome:4533).
       # - NAVIDROME_URL=https://music.example.com
 
       # Optional: Unique Module ID and Name (for single-server mode)

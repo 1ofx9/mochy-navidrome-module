@@ -20,7 +20,7 @@ import (
 	"github.com/1ofx9/mochy-navidrome-module/internal/server"
 )
 
-var version = "1.5.0"
+var version = "1.5.1"
 
 const shutdownGrace = 10 * time.Second
 
@@ -205,10 +205,12 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger, listening f
 	}
 	defer listener.Close()
 
-	if cfg.DefaultNavidromeURL == "" {
+	if cfg.DefaultNavidromeURL == "" && len(cfg.Instances) == 0 {
 		if discovered := probeNavidrome("http://navidrome:4533", "http://127.0.0.1:4533"); discovered != "" {
 			cfg.DefaultNavidromeURL = discovered
 			log.Info("auto-discovered navidrome server", "url", discovered)
+		} else {
+			log.Warn("no upstream Navidrome server configured (set NAVIDROME_URL or SERVERS)")
 		}
 	}
 
@@ -281,6 +283,8 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger, listening f
 			}
 			if cfg.DefaultNavidromeURL != "" {
 				fmt.Fprintf(os.Stderr, "  ➜  Navidrome: %s\n", cfg.DefaultNavidromeURL)
+			} else {
+				fmt.Fprintf(os.Stderr, "  ➜  Navidrome: (not configured - set NAVIDROME_URL or SERVERS)\n")
 			}
 			if cfg.PublicURL != "" {
 				fmt.Fprintf(os.Stderr, "  ➜  Public:    %s/manifest.json\n", strings.TrimRight(cfg.PublicURL, "/"))

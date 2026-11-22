@@ -4,6 +4,13 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.5.1] - 2026-11-22
+
+### Changed
+
+- Removed the "Server URL" input field from the Mochy Music module manifest settings. Upstream server addresses are now managed exclusively on the module host (via `NAVIDROME_URL`, `SERVERS`, or Docker network auto-discovery), streamlining the in-app setup to only credentials (`Username`, `Password`, and `Audio Quality`).
+- Hardened artwork caching and stream proxy routing to use server-configured upstream addresses when client queries omit `navidrome_url`.
+
 ## [1.5.0] - 2026-11-22
 
 ### Added

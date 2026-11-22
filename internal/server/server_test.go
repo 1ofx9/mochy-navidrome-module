@@ -63,10 +63,13 @@ func TestManifest(t *testing.T) {
 		if len(m.Resources) != 4 {
 			t.Fatalf("resources length = %d, want 4", len(m.Resources))
 		}
-		if len(m.Settings) != 4 {
-			t.Fatalf("settings length = %d, want 4", len(m.Settings))
+		if len(m.Settings) != 3 {
+			t.Fatalf("settings length = %d, want 3 (only credentials and quality)", len(m.Settings))
 		}
 		for _, s := range m.Settings {
+			if s.Key == "navidrome_url" {
+				t.Fatalf("navidrome_url setting should not be exposed in Mochy")
+			}
 			if s.Key == "navidrome_password" {
 				if s.Type != "password" || s.InputType != "password" || s.Format != "password" || !s.Secure || !s.Secret || !s.Password || !s.Masked {
 					t.Fatalf("expected password setting with masking attributes, got: %+v", s)
@@ -76,7 +79,7 @@ func TestManifest(t *testing.T) {
 	}
 }
 
-func TestManifestWithDefaultNavidromeURLHidesSetting(t *testing.T) {
+func TestManifestSettingsNeverExposeNavidromeURL(t *testing.T) {
 	srv := New(Options{
 		PublicURL:           "http://localhost:8090",
 		DefaultNavidromeURL: "http://navidrome:4533",
@@ -96,11 +99,11 @@ func TestManifestWithDefaultNavidromeURLHidesSetting(t *testing.T) {
 		t.Fatalf("failed to parse manifest: %v", err)
 	}
 	if len(m.Settings) != 3 {
-		t.Fatalf("settings length = %d, want 3 (navidrome_url must be hidden)", len(m.Settings))
+		t.Fatalf("settings length = %d, want 3", len(m.Settings))
 	}
 	for _, s := range m.Settings {
 		if s.Key == "navidrome_url" {
-			t.Fatalf("navidrome_url setting should be hidden when DefaultNavidromeURL is configured")
+			t.Fatalf("navidrome_url setting should never be present in manifest settings")
 		}
 	}
 }
@@ -123,6 +126,27 @@ func TestSearchWithDefaultNavidromeURL(t *testing.T) {
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want 200", rec.Code)
+	}
+}
+
+func TestSearchWithoutConfiguredUpstreamFailsGracefully(t *testing.T) {
+	srv := New(Options{})
+	handler := srv.Handler()
+
+	q := url.Values{
+		"navidrome_user":     {"admin"},
+		"navidrome_password": {"secret"},
+		"q":                  {"Test"},
+	}
+	req := httptest.NewRequest(http.MethodGet, "/search?"+q.Encode(), nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusBadRequest {
+		t.Fatalf("status = %d, want 400", rec.Code)
+	}
+	if !strings.Contains(rec.Body.String(), "upstream Navidrome server URL is not configured") {
+		t.Fatalf("unexpected error response: %s", rec.Body.String())
 	}
 }
 
@@ -494,7 +518,7 @@ func TestManifestCustomModuleIDAndName(t *testing.T) {
 	srv := New(Options{
 		ModuleID:   "navidrome-family",
 		ModuleName: "Navidrome (Family)",
-		Version:    "1.5.0",
+		Version:    "1.5.1",
 	})
 	handler := srv.Handler()
 
@@ -526,7 +550,7 @@ func TestMultiServerHandler(t *testing.T) {
 
 	srv := New(Options{
 		PublicURL: "https://mochy.subs-server.site",
-		Version:   "1.5.0",
+		Version:   "1.5.1",
 		Instances: []InstanceConfig{
 			{
 				Slug:                "music",

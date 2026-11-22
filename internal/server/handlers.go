@@ -109,19 +109,8 @@ func (s *Server) serveRoot(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) serveManifest(w http.ResponseWriter, r *http.Request) {
-	var settings []settingDefinition
-	if s.DefaultNavidromeURL == "" {
-		settings = append(settings, settingDefinition{
-			Key:         "navidrome_url",
-			Label:       "Server URL",
-			Type:        "text",
-			Hint:        "http://192.168.1.100:4533",
-			Description: "Navidrome server address",
-			Default:     "",
-		})
-	}
-	settings = append(settings,
-		settingDefinition{
+	settings := []settingDefinition{
+		{
 			Key:         "navidrome_user",
 			Label:       "Username",
 			Type:        "text",
@@ -129,7 +118,7 @@ func (s *Server) serveManifest(w http.ResponseWriter, r *http.Request) {
 			Description: "Navidrome username",
 			Default:     "",
 		},
-		settingDefinition{
+		{
 			Key:         "navidrome_password",
 			Label:       "Password",
 			Type:        "password",
@@ -143,7 +132,7 @@ func (s *Server) serveManifest(w http.ResponseWriter, r *http.Request) {
 			Description: "Navidrome password",
 			Default:     "",
 		},
-		settingDefinition{
+		{
 			Key:         "quality",
 			Label:       "Audio Quality",
 			Type:        "select",
@@ -156,7 +145,7 @@ func (s *Server) serveManifest(w http.ResponseWriter, r *http.Request) {
 				{Value: "low", Label: "Low (128 kbps)"},
 			},
 		},
-	)
+	}
 
 	manifest := manifestResponse{
 		ID:          s.ModuleID,
@@ -195,8 +184,11 @@ func (s *Server) getSubsonicClient(r *http.Request) (*subsonic.Client, error) {
 		}
 	}
 
-	if baseURL == "" || user == "" {
-		return nil, errors.New("navidrome_url and navidrome_user are required")
+	if baseURL == "" {
+		return nil, errors.New("upstream Navidrome server URL is not configured (set NAVIDROME_URL or SERVERS)")
+	}
+	if user == "" {
+		return nil, errors.New("navidrome_user is required")
 	}
 
 	parsed, err := url.ParseRequestURI(baseURL)
@@ -245,9 +237,11 @@ func (s *Server) serveSearch(w http.ResponseWriter, r *http.Request) {
 		}
 		if song.CoverArt != "" {
 			artParams := url.Values{
-				"navidrome_url":      {q.Get("navidrome_url")},
 				"navidrome_user":     {q.Get("navidrome_user")},
 				"navidrome_password": {q.Get("navidrome_password")},
+			}
+			if u := q.Get("navidrome_url"); u != "" {
+				artParams.Set("navidrome_url", u)
 			}
 			artURL := s.baseURL(r) + "/art/" + url.PathEscape(song.CoverArt) + "?" + artParams.Encode()
 			item.ArtworkURL = artURL
@@ -291,9 +285,11 @@ func (s *Server) serveStream(w http.ResponseWriter, r *http.Request) {
 	maxBitRate := qualityToMaxBitRate(qualityPref)
 
 	audioParams := url.Values{
-		"navidrome_url":      {q.Get("navidrome_url")},
 		"navidrome_user":     {q.Get("navidrome_user")},
 		"navidrome_password": {q.Get("navidrome_password")},
+	}
+	if u := q.Get("navidrome_url"); u != "" {
+		audioParams.Set("navidrome_url", u)
 	}
 	if qualityPref != "" {
 		audioParams.Set("quality", qualityPref)
@@ -398,6 +394,9 @@ func (s *Server) serveArt(w http.ResponseWriter, r *http.Request) {
 	}
 
 	baseURL := strings.TrimSpace(r.URL.Query().Get("navidrome_url"))
+	if baseURL == "" {
+		baseURL = s.DefaultNavidromeURL
+	}
 	cacheKey := fmt.Sprintf("%s:%s:%d", baseURL, id, size)
 
 	if s.artCache != nil {
@@ -496,9 +495,11 @@ func (s *Server) serveMetadata(w http.ResponseWriter, r *http.Request) {
 	}
 	if song.CoverArt != "" {
 		artParams := url.Values{
-			"navidrome_url":      {q.Get("navidrome_url")},
 			"navidrome_user":     {q.Get("navidrome_user")},
 			"navidrome_password": {q.Get("navidrome_password")},
+		}
+		if u := q.Get("navidrome_url"); u != "" {
+			artParams.Set("navidrome_url", u)
 		}
 		resp.CoverURL = s.baseURL(r) + "/art/" + url.PathEscape(song.CoverArt) + "?" + artParams.Encode()
 	}
