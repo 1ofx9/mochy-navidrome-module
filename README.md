@@ -114,8 +114,9 @@ PUBLIC_URL=https://music-module.example.com
 1. Open **Mochy Music** on your Android phone.
 2. Navigate to **Settings** → **Modules** → **Add a module**.
 3. Select **Add from a link** and enter your module manifest URL:
-   - **Local Network**: `http://<LAN_IP>:8090/manifest.json`
-   - **Reverse Proxy**: `https://music-module.example.com/manifest.json`
+   - **Single Server**: `https://music-module.example.com/manifest.json` (or `http://<LAN_IP>:8090/manifest.json`)
+   - **Multi-Server**: `https://music-module.example.com/<slug>/manifest.json` (e.g. `/music/manifest.json` and `/dolby/manifest.json`)
+   *(Visiting `https://music-module.example.com/` in any browser displays a dashboard with copyable manifest URLs for all configured libraries).*
 4. Tap **Add**. Mochy will register the **Navidrome** module.
 5. In the module settings:
    - **Username**: Your Navidrome username.
@@ -168,6 +169,8 @@ services:
 This single container generates isolated manifests and proxy endpoints for each library:
 * **Standard Music:** `https://mochy.example.com/music/manifest.json`
 * **Dolby Audio:** `https://mochy.example.com/dolby/manifest.json`
+
+> **Tip**: Visiting `https://mochy.example.com/` in your browser opens a landing dashboard listing all configured libraries and their direct manifest URLs with copy buttons.
 
 Add each manifest URL into Mochy Music (`Settings → Modules → + Add Module`). Both will appear as distinct streaming sources under **Play from**.
 
