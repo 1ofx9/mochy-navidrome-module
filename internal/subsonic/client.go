@@ -280,7 +280,7 @@ func (c *Client) FetchArt(ctx context.Context, id string, size int) ([]byte, str
 		return nil, "", "", "", fmt.Errorf("navidrome cover art returned status %d", res.StatusCode)
 	}
 
-	body, err := io.ReadAll(res.Body)
+	body, err := io.ReadAll(io.LimitReader(res.Body, 10*1024*1024))
 	if err != nil {
 		return nil, "", "", "", err
 	}

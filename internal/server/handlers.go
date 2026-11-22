@@ -165,13 +165,12 @@ func (s *Server) serveManifest(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *Server) getSubsonicClient(r *http.Request) (*subsonic.Client, error) {
-	q := r.URL.Query()
-	baseURL := strings.TrimSpace(q.Get("navidrome_url"))
+	baseURL := s.DefaultNavidromeURL
 	if baseURL == "" {
-		baseURL = s.DefaultNavidromeURL
+		baseURL = strings.TrimSpace(r.URL.Query().Get("navidrome_url"))
 	}
-	user := strings.TrimSpace(q.Get("navidrome_user"))
-	pass := q.Get("navidrome_password")
+	user := strings.TrimSpace(r.URL.Query().Get("navidrome_user"))
+	pass := r.URL.Query().Get("navidrome_password")
 
 	if baseURL == "" || user == "" {
 		if u, p, ok := r.BasicAuth(); ok {
@@ -393,9 +392,9 @@ func (s *Server) serveArt(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	baseURL := strings.TrimSpace(r.URL.Query().Get("navidrome_url"))
+	baseURL := s.DefaultNavidromeURL
 	if baseURL == "" {
-		baseURL = s.DefaultNavidromeURL
+		baseURL = strings.TrimSpace(r.URL.Query().Get("navidrome_url"))
 	}
 	cacheKey := fmt.Sprintf("%s:%s:%d", baseURL, id, size)
 
@@ -545,38 +544,36 @@ type multiRootInstance struct {
 	ID          string `json:"id"`
 	Name        string `json:"name"`
 	ManifestURL string `json:"manifestUrl"`
-	ServerURL   string `json:"serverUrl,omitempty"`
 }
 
 type multiRootResponse struct {
-	Status    string              `json:"status"`
-	Version   string              `json:"version"`
-	Mode      string              `json:"mode"`
-	Instances []multiRootInstance `json:"instances"`
+	Status  string              `json:"status"`
+	Version string              `json:"version"`
+	Mode    string              `json:"mode"`
+	Servers []multiRootInstance `json:"servers"`
 }
 
 func (s *Server) serveMultiRoot(w http.ResponseWriter, r *http.Request) {
 	base := s.baseURL(r)
-	instances := make([]multiRootInstance, 0, len(s.Instances))
+	servers := make([]multiRootInstance, 0, len(s.Instances))
 	for _, inst := range s.Instances {
 		instBase := base + "/" + inst.Slug
 		if s.PublicURL != "" {
 			instBase = strings.TrimRight(s.PublicURL, "/") + "/" + inst.Slug
 		}
-		instances = append(instances, multiRootInstance{
+		servers = append(servers, multiRootInstance{
 			Slug:        inst.Slug,
 			ID:          inst.ModuleID,
 			Name:        inst.ModuleName,
 			ManifestURL: instBase + "/manifest.json",
-			ServerURL:   inst.DefaultNavidromeURL,
 		})
 	}
 
 	writeJSON(w, http.StatusOK, multiRootResponse{
-		Status:    "ok",
-		Version:   s.Version,
-		Mode:      "multi-instance",
-		Instances: instances,
+		Status:  "ok",
+		Version: s.Version,
+		Mode:    "multi-server",
+		Servers: servers,
 	})
 }
 
@@ -586,10 +583,10 @@ func (s *Server) serveMultiHealth(w http.ResponseWriter, r *http.Request) {
 		slugs = append(slugs, inst.Slug)
 	}
 	writeJSON(w, http.StatusOK, map[string]any{
-		"status":    "ok",
-		"version":   s.Version,
-		"mode":      "multi-instance",
-		"instances": slugs,
+		"status":  "ok",
+		"version": s.Version,
+		"mode":    "multi-server",
+		"servers": slugs,
 	})
 }
 

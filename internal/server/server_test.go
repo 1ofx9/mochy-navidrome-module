@@ -129,6 +129,30 @@ func TestSearchWithDefaultNavidromeURL(t *testing.T) {
 	}
 }
 
+func TestSSRFOverrideIgnoredWhenDefaultConfigured(t *testing.T) {
+	fake := fakes.NewNavidrome(t)
+	srv := New(Options{
+		DefaultNavidromeURL: fake.URL,
+	})
+	handler := srv.Handler()
+
+	// An attacker attempts to override the upstream with an SSRF target
+	q := url.Values{
+		"navidrome_url":      {"http://169.254.169.254/latest/meta-data"},
+		"navidrome_user":     {fakes.NavidromeUser},
+		"navidrome_password": {fakes.NavidromePassword},
+		"q":                  {"Religion"},
+	}
+	req := httptest.NewRequest(http.MethodGet, "/search?"+q.Encode(), nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+
+	// It must succeed by querying fake.URL, completely ignoring the malicious navidrome_url parameter
+	if rec.Code != http.StatusOK {
+		t.Fatalf("status = %d, want 200 (SSRF override should be ignored)", rec.Code)
+	}
+}
+
 func TestSearchWithoutConfiguredUpstreamFailsGracefully(t *testing.T) {
 	srv := New(Options{})
 	handler := srv.Handler()
@@ -577,8 +601,8 @@ func TestMultiServerHandler(t *testing.T) {
 	}
 	var health map[string]any
 	_ = json.Unmarshal(rec.Body.Bytes(), &health)
-	if health["mode"] != "multi-instance" {
-		t.Fatalf("expected mode=multi-instance, got: %+v", health)
+	if health["mode"] != "multi-server" {
+		t.Fatalf("expected mode=multi-server, got: %+v", health)
 	}
 
 	// 2. Root Index
@@ -592,14 +616,14 @@ func TestMultiServerHandler(t *testing.T) {
 	if err := json.Unmarshal(rec.Body.Bytes(), &rootResp); err != nil {
 		t.Fatalf("failed to parse root response: %v", err)
 	}
-	if len(rootResp.Instances) != 2 {
-		t.Fatalf("root instances count = %d, want 2", len(rootResp.Instances))
+	if len(rootResp.Servers) != 2 {
+		t.Fatalf("root servers count = %d, want 2", len(rootResp.Servers))
 	}
-	if rootResp.Instances[0].ManifestURL != "https://mochy.subs-server.site/music/manifest.json" {
-		t.Errorf("unexpected music manifest URL: %s", rootResp.Instances[0].ManifestURL)
+	if rootResp.Servers[0].ManifestURL != "https://mochy.subs-server.site/music/manifest.json" {
+		t.Errorf("unexpected music manifest URL: %s", rootResp.Servers[0].ManifestURL)
 	}
-	if rootResp.Instances[1].ManifestURL != "https://mochy.subs-server.site/dolby/manifest.json" {
-		t.Errorf("unexpected dolby manifest URL: %s", rootResp.Instances[1].ManifestURL)
+	if rootResp.Servers[1].ManifestURL != "https://mochy.subs-server.site/dolby/manifest.json" {
+		t.Errorf("unexpected dolby manifest URL: %s", rootResp.Servers[1].ManifestURL)
 	}
 
 	// 3. Root manifest redirect to first instance

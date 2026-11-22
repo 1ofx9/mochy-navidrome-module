@@ -43,7 +43,7 @@ services:
       - LOG_FORMAT=text
       # Optional: set public URL if behind a reverse proxy
       # - PUBLIC_URL=https://music-module.example.com
-      # Optional: pre-fill Navidrome server address (auto-hides Server URL in Mochy)
+      # Optional: upstream Navidrome server address
       # - NAVIDROME_URL=https://music.example.com
 ```
 
@@ -170,7 +170,7 @@ This single container generates isolated manifests and proxy endpoints for each 
 * **Standard Music:** `https://mochy.example.com/music/manifest.json`
 * **Dolby Audio:** `https://mochy.example.com/dolby/manifest.json`
 
-> **Tip**: Visiting `https://mochy.example.com/` in your browser opens a landing dashboard listing all configured libraries and their direct manifest URLs with copy buttons.
+Visiting `https://mochy.example.com/` in a browser displays all configured libraries and their direct manifest URLs.
 
 Add each manifest URL into Mochy Music (`Settings → Modules → + Add Module`). Both will appear as distinct streaming sources under **Play from**.
 
