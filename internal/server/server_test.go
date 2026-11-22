@@ -494,7 +494,7 @@ func TestManifestCustomModuleIDAndName(t *testing.T) {
 	srv := New(Options{
 		ModuleID:   "navidrome-family",
 		ModuleName: "Navidrome (Family)",
-		Version:    "1.4.1",
+		Version:    "1.5.0",
 	})
 	handler := srv.Handler()
 
@@ -517,5 +517,136 @@ func TestManifestCustomModuleIDAndName(t *testing.T) {
 	}
 	if !strings.Contains(m.Description, "Navidrome (Family)") {
 		t.Errorf("Description = %q, want it to contain 'Navidrome (Family)'", m.Description)
+	}
+}
+
+func TestMultiServerHandler(t *testing.T) {
+	fakeMusic := fakes.NewNavidrome(t)
+	fakeDolby := fakes.NewNavidrome(t)
+
+	srv := New(Options{
+		PublicURL: "https://mochy.subs-server.site",
+		Version:   "1.5.0",
+		Instances: []InstanceConfig{
+			{
+				Slug:                "music",
+				ModuleID:            "mochy-navidrome-music",
+				ModuleName:          "Navidrome (Music)",
+				DefaultNavidromeURL: fakeMusic.URL,
+			},
+			{
+				Slug:                "dolby",
+				ModuleID:            "mochy-navidrome-dolby",
+				ModuleName:          "Navidrome (Dolby)",
+				DefaultNavidromeURL: fakeDolby.URL,
+			},
+		},
+	})
+	handler := srv.Handler()
+
+	// 1. Healthcheck
+	req := httptest.NewRequest(http.MethodGet, "/health", nil)
+	rec := httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("/health status = %d, want 200", rec.Code)
+	}
+	var health map[string]any
+	_ = json.Unmarshal(rec.Body.Bytes(), &health)
+	if health["mode"] != "multi-instance" {
+		t.Fatalf("expected mode=multi-instance, got: %+v", health)
+	}
+
+	// 2. Root Index
+	req = httptest.NewRequest(http.MethodGet, "/", nil)
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("/ status = %d, want 200", rec.Code)
+	}
+	var rootResp multiRootResponse
+	if err := json.Unmarshal(rec.Body.Bytes(), &rootResp); err != nil {
+		t.Fatalf("failed to parse root response: %v", err)
+	}
+	if len(rootResp.Instances) != 2 {
+		t.Fatalf("root instances count = %d, want 2", len(rootResp.Instances))
+	}
+	if rootResp.Instances[0].ManifestURL != "https://mochy.subs-server.site/music/manifest.json" {
+		t.Errorf("unexpected music manifest URL: %s", rootResp.Instances[0].ManifestURL)
+	}
+	if rootResp.Instances[1].ManifestURL != "https://mochy.subs-server.site/dolby/manifest.json" {
+		t.Errorf("unexpected dolby manifest URL: %s", rootResp.Instances[1].ManifestURL)
+	}
+
+	// 3. Root manifest redirect to first instance
+	req = httptest.NewRequest(http.MethodGet, "/manifest.json", nil)
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusTemporaryRedirect {
+		t.Fatalf("/manifest.json redirect code = %d, want 307", rec.Code)
+	}
+	if loc := rec.Header().Get("Location"); loc != "/music/manifest.json" {
+		t.Fatalf("redirect location = %q, want /music/manifest.json", loc)
+	}
+
+	// 4. Music Instance Manifest
+	req = httptest.NewRequest(http.MethodGet, "/music/manifest.json", nil)
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("/music/manifest.json status = %d, want 200", rec.Code)
+	}
+	var mMusic manifestResponse
+	_ = json.Unmarshal(rec.Body.Bytes(), &mMusic)
+	if mMusic.ID != "mochy-navidrome-music" || mMusic.Name != "Navidrome (Music)" {
+		t.Fatalf("unexpected music manifest: %+v", mMusic)
+	}
+	if mMusic.Icon != "https://mochy.subs-server.site/music/icon.png" {
+		t.Fatalf("unexpected music icon: %s", mMusic.Icon)
+	}
+
+	// 5. Dolby Instance Manifest
+	req = httptest.NewRequest(http.MethodGet, "/dolby/manifest.json", nil)
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("/dolby/manifest.json status = %d, want 200", rec.Code)
+	}
+	var mDolby manifestResponse
+	_ = json.Unmarshal(rec.Body.Bytes(), &mDolby)
+	if mDolby.ID != "mochy-navidrome-dolby" || mDolby.Name != "Navidrome (Dolby)" {
+		t.Fatalf("unexpected dolby manifest: %+v", mDolby)
+	}
+	if mDolby.Icon != "https://mochy.subs-server.site/dolby/icon.png" {
+		t.Fatalf("unexpected dolby icon: %s", mDolby.Icon)
+	}
+
+	// 6. Music Search
+	q := url.Values{
+		"navidrome_user":     {fakes.NavidromeUser},
+		"navidrome_password": {fakes.NavidromePassword},
+		"q":                  {"Religion"},
+	}
+	req = httptest.NewRequest(http.MethodGet, "/music/search?"+q.Encode(), nil)
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK {
+		t.Fatalf("/music/search status = %d, want 200", rec.Code)
+	}
+	var searchResp searchResponse
+	_ = json.Unmarshal(rec.Body.Bytes(), &searchResp)
+	if len(searchResp.Tracks) != 1 || searchResp.Tracks[0].Title != "New Religion" {
+		t.Fatalf("unexpected search response: %+v", searchResp)
+	}
+	if !strings.HasPrefix(searchResp.Tracks[0].CoverURL, "https://mochy.subs-server.site/music/art/") {
+		t.Fatalf("unexpected cover URL path prefix: %s", searchResp.Tracks[0].CoverURL)
+	}
+
+	// 7. Instance Icon
+	req = httptest.NewRequest(http.MethodGet, "/music/icon.png", nil)
+	rec = httptest.NewRecorder()
+	handler.ServeHTTP(rec, req)
+	if rec.Code != http.StatusOK || rec.Header().Get("Content-Type") != "image/png" {
+		t.Fatalf("/music/icon.png failed: status = %d", rec.Code)
 	}
 }

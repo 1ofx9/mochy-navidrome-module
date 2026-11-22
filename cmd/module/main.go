@@ -20,7 +20,7 @@ import (
 	"github.com/1ofx9/mochy-navidrome-module/internal/server"
 )
 
-var version = "1.4.1"
+var version = "1.5.0"
 
 const shutdownGrace = 10 * time.Second
 
@@ -212,6 +212,16 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger, listening f
 		}
 	}
 
+	var instConfigs []server.InstanceConfig
+	for _, inst := range cfg.Instances {
+		instConfigs = append(instConfigs, server.InstanceConfig{
+			Slug:                inst.Slug,
+			ModuleID:            inst.ModuleID,
+			ModuleName:          inst.ModuleName,
+			DefaultNavidromeURL: inst.DefaultNavidromeURL,
+		})
+	}
+
 	srvHandler := server.New(server.Options{
 		PublicURL:           cfg.PublicURL,
 		DefaultNavidromeURL: cfg.DefaultNavidromeURL,
@@ -219,6 +229,7 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger, listening f
 		ModuleName:          cfg.ModuleName,
 		Version:             version,
 		Log:                 log,
+		Instances:           instConfigs,
 	})
 
 	srv := &http.Server{
@@ -241,24 +252,43 @@ func serve(ctx context.Context, cfg config.Config, log *slog.Logger, listening f
 
 	if cfg.LogFormat != "json" {
 		fmt.Fprintf(os.Stderr, "\n")
-		title := "MOCHY NAVIDROME MODULE"
-		if cfg.ModuleName != "Navidrome" && cfg.ModuleName != "" {
-			title = fmt.Sprintf("MOCHY NAVIDROME MODULE (%s)", cfg.ModuleName)
-		}
-		fmt.Fprintf(os.Stderr, "  ▲  %s  v%s\n\n", title, version)
-		fmt.Fprintf(os.Stderr, "  ➜  Local:     %s\n", manifestLocal)
-		if manifestLAN != "" {
-			fmt.Fprintf(os.Stderr, "  ➜  Network:   %s\n", manifestLAN)
-		}
-		if cfg.DefaultNavidromeURL != "" {
-			fmt.Fprintf(os.Stderr, "  ➜  Navidrome: %s\n", cfg.DefaultNavidromeURL)
-		}
-		if cfg.PublicURL != "" {
-			fmt.Fprintf(os.Stderr, "  ➜  Public:    %s/manifest.json\n", strings.TrimRight(cfg.PublicURL, "/"))
+		if len(cfg.Instances) > 0 {
+			fmt.Fprintf(os.Stderr, "  ▲  MOCHY NAVIDROME MODULE (Multi-Server)  v%s\n\n", version)
+			fmt.Fprintf(os.Stderr, "  ➜  Configured %d server instance(s):\n", len(cfg.Instances))
+			for _, inst := range cfg.Instances {
+				localURL := fmt.Sprintf("http://localhost:%d/%s/manifest.json", cfg.Port, inst.Slug)
+				publicURL := fmt.Sprintf("https://<your-domain>/%s/manifest.json", inst.Slug)
+				if cfg.PublicURL != "" {
+					publicURL = fmt.Sprintf("%s/%s/manifest.json", strings.TrimRight(cfg.PublicURL, "/"), inst.Slug)
+				}
+				fmt.Fprintf(os.Stderr, "     • %s (/%s):\n", inst.ModuleName, inst.Slug)
+				fmt.Fprintf(os.Stderr, "       - Mochy:     %s\n", publicURL)
+				fmt.Fprintf(os.Stderr, "       - Local:     %s\n", localURL)
+				if inst.DefaultNavidromeURL != "" {
+					fmt.Fprintf(os.Stderr, "       - Upstream:  %s\n", inst.DefaultNavidromeURL)
+				}
+			}
+			fmt.Fprintf(os.Stderr, "\n  ➜  Mochy:     Settings → Modules → + Add Module (add each link above)\n\n")
 		} else {
-			fmt.Fprintf(os.Stderr, "  ➜  Public:    https://<your-domain>/manifest.json\n")
+			title := "MOCHY NAVIDROME MODULE"
+			if cfg.ModuleName != "Navidrome" && cfg.ModuleName != "" {
+				title = fmt.Sprintf("MOCHY NAVIDROME MODULE (%s)", cfg.ModuleName)
+			}
+			fmt.Fprintf(os.Stderr, "  ▲  %s  v%s\n\n", title, version)
+			fmt.Fprintf(os.Stderr, "  ➜  Local:     %s\n", manifestLocal)
+			if manifestLAN != "" {
+				fmt.Fprintf(os.Stderr, "  ➜  Network:   %s\n", manifestLAN)
+			}
+			if cfg.DefaultNavidromeURL != "" {
+				fmt.Fprintf(os.Stderr, "  ➜  Navidrome: %s\n", cfg.DefaultNavidromeURL)
+			}
+			if cfg.PublicURL != "" {
+				fmt.Fprintf(os.Stderr, "  ➜  Public:    %s/manifest.json\n", strings.TrimRight(cfg.PublicURL, "/"))
+			} else {
+				fmt.Fprintf(os.Stderr, "  ➜  Public:    https://<your-domain>/manifest.json\n")
+			}
+			fmt.Fprintf(os.Stderr, "\n  ➜  Mochy:     Settings → Modules → + Add Module\n\n")
 		}
-		fmt.Fprintf(os.Stderr, "\n  ➜  Mochy:     Settings → Modules → + Add Module\n\n")
 	}
 
 	attrs := []any{

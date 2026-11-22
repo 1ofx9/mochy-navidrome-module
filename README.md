@@ -18,7 +18,7 @@ A lightweight, stateless web module connecting [Navidrome](https://www.navidrome
 - **Lossless & Hi-Res Format Badging**: Resolves audio codec, sample rate, bit depth, and player badges (`Hi-Res Lossless`, `Lossless`, `High`, `Low`).
 - **Synchronized LRC Lyrics**: Fetches timed lyrics from Navidrome via OpenSubsonic `getLyricsBySongId` with fallback to standard Subsonic lyrics.
 - **In-Memory Artwork Cache**: Thread-safe LRU cover art cache with SHA-256 ETags and HTTP 304 revalidation.
-- **Multi-Instance Support**: Configurable `MODULE_ID` and `MODULE_NAME` to serve multiple Navidrome servers side-by-side in Mochy Music.
+- **Multi-Server Support**: Serve multiple Navidrome servers from a single container via path prefixes (`SERVERS=music:...,dolby:...`) or across separate containers.
 - **Zero Third-Party Dependencies**: Pure Go standard library implementation.
 
 ---
@@ -72,7 +72,7 @@ Verify that the module is healthy:
 
 ```bash
 curl http://localhost:8090/health
-# {"status":"ok","version":"1.4.1"}
+# {"status":"ok","version":"1.5.0"}
 ```
 
 ---
@@ -135,6 +135,7 @@ Refer to [`.env.example`](.env.example) for environment variable defaults:
 | `PORT` | `8090` | HTTP port the module listens on. |
 | `PUBLIC_URL` | *(empty)* | Optional public base URL. Detected from the `Host` header if empty. |
 | `NAVIDROME_URL` | *(empty)* | Optional default Navidrome URL. Hides the "Server URL" input in Mochy when set. |
+| `SERVERS` | *(empty)* | Optional multi-server configuration for single-container setups (e.g. `music:Navidrome:https://music.example.com,dolby:Navidrome (Dolby):https://dolby.example.com`). |
 | `MODULE_ID` | `mochy-navidrome` | Unique module identifier. Change this when running multiple instances. |
 | `MODULE_NAME` | `Navidrome` | Display name shown in Mochy Music (e.g. `Navidrome (Family)`). |
 | `LOG_LEVEL` | `info` | Log verbosity: `debug`, `info`, `warn`, `error`. |
@@ -144,7 +145,36 @@ Refer to [`.env.example`](.env.example) for environment variable defaults:
 
 ## Multi-Server Setup (Multiple Navidrome Instances)
 
-You can serve multiple Navidrome servers on the same host into Mochy Music simultaneously by assigning each container a unique `MODULE_ID`, `MODULE_NAME`, and port:
+You can serve multiple Navidrome servers to Mochy Music simultaneously using either a single container or separate containers:
+
+### Option A: Single Container (Recommended)
+
+Run a single module container that serves all your Navidrome libraries using path routing via the `SERVERS` variable:
+
+```yaml
+services:
+  mochy-navidrome-module:
+    image: ghcr.io/1ofx9/mochy-navidrome-module:latest
+    container_name: mochy-navidrome-module
+    restart: unless-stopped
+    ports:
+      - "8090:8090"
+    environment:
+      - PORT=8090
+      - PUBLIC_URL=https://mochy.example.com
+      # Syntax: slug:Display Name:Navidrome URL,...
+      - SERVERS=music:Navidrome:https://music.example.com,dolby:Navidrome (Dolby):https://dolby.example.com
+```
+
+This single container generates isolated manifests and proxy endpoints for each library:
+* **Standard Music:** `https://mochy.example.com/music/manifest.json`
+* **Dolby Audio:** `https://mochy.example.com/dolby/manifest.json`
+
+Add each manifest URL into Mochy Music (`Settings → Modules → + Add Module`). Both will appear as distinct streaming sources under **Play from**.
+
+### Option B: Multiple Containers
+
+Alternatively, run dedicated containers on separate ports:
 
 ```yaml
 services:

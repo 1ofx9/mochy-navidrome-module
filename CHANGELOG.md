@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows [Kee
 
 ## [Unreleased]
 
+## [1.5.0] - 2026-11-22
+
+### Added
+
+- Single-container multi-server path routing via `SERVERS` (or `INSTANCES`) environment variable (e.g. `SERVERS=music:Navidrome:https://music.example.com,dolby:Navidrome (Dolby):https://dolby.example.com`).
+- Generates isolated manifests and endpoints per library (`/<slug>/manifest.json`, `/<slug>/search`, `/<slug>/stream/{id}`, etc.) from one lightweight container.
+- Root index (`/`) and multi-instance health check (`/health`) listing all configured servers with copyable manifest URLs.
+- Dynamic startup banner listing all configured server instances and their respective Mochy manifest links.
+
 ## [1.4.1] - 2026-11-21
 
 ### Added

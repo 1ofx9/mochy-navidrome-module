@@ -16,9 +16,14 @@ services:
       # Optional: Pre-fill Navidrome server address and auto-hide the "Server URL" box in Mochy
       # - NAVIDROME_URL=https://music.example.com
 
-      # Optional: Unique Module ID and Name for multi-server setups
+      # Optional: Unique Module ID and Name (for single-server mode)
       # - MODULE_ID=mochy-navidrome
       # - MODULE_NAME=Navidrome
+
+      # Optional: Multi-Server in a single container (path-based routing)
+      # Format: slug:Name:URL,slug2:Name2:URL2
+      # Exposes /<slug>/manifest.json for each library (e.g. /music/manifest.json and /dolby/manifest.json)
+      # - SERVERS=music:Navidrome:https://music.example.com,dolby:Navidrome (Dolby):https://dolby.example.com
 
 
     # Optional: If running on the same Docker network as Navidrome,

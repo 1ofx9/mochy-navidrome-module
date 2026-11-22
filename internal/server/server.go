@@ -13,14 +13,23 @@ import (
 //go:embed icon.png
 var navidromeIcon []byte
 
+type InstanceConfig struct {
+	Slug                string
+	ModuleID            string
+	ModuleName          string
+	DefaultNavidromeURL string
+}
+
 type Options struct {
 	PublicURL           string
 	DefaultNavidromeURL string
 	ModuleID            string
 	ModuleName          string
 	Version             string
+	PathPrefix          string
 	Log                 *slog.Logger
 	ArtCache            *ArtCache
+	Instances           []InstanceConfig
 }
 
 type Server struct {
@@ -45,7 +54,7 @@ func New(o Options) *Server {
 		o.ModuleName = "Navidrome"
 	}
 	if o.Version == "" {
-		o.Version = "1.4.1"
+		o.Version = "1.5.0"
 	}
 	return &Server{
 		Options:  o,
@@ -54,7 +63,7 @@ func New(o Options) *Server {
 	}
 }
 
-func (s *Server) Handler() http.Handler {
+func (s *Server) routes() http.Handler {
 	mux := http.NewServeMux()
 
 	mux.HandleFunc("GET /icon.png", s.serveIcon)
@@ -72,7 +81,68 @@ func (s *Server) Handler() http.Handler {
 	mux.HandleFunc("GET /health", s.serveHealth)
 	mux.HandleFunc("GET /{$}", s.serveRoot)
 
-	handler := s.withSecurityHeaders(mux)
+	return mux
+}
+
+func (s *Server) multiRoutes() http.Handler {
+	mux := http.NewServeMux()
+
+	mux.HandleFunc("GET /icon.png", s.serveIcon)
+	mux.HandleFunc("GET /logo.png", s.serveIcon)
+	mux.HandleFunc("GET /health", s.serveMultiHealth)
+	mux.HandleFunc("GET /{$}", s.serveMultiRoot)
+
+	if len(s.Instances) > 0 {
+		firstPrefix := "/" + s.Instances[0].Slug
+		mux.HandleFunc("GET /manifest.json", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, firstPrefix+"/manifest.json", http.StatusTemporaryRedirect)
+		})
+		mux.HandleFunc("GET /manifest", func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, firstPrefix+"/manifest.json", http.StatusTemporaryRedirect)
+		})
+	}
+
+	for _, inst := range s.Instances {
+		slug := inst.Slug
+		prefix := "/" + slug
+
+		subPublic := ""
+		if s.PublicURL != "" {
+			subPublic = strings.TrimRight(s.PublicURL, "/") + prefix
+		}
+
+		subOpt := Options{
+			PublicURL:           subPublic,
+			DefaultNavidromeURL: inst.DefaultNavidromeURL,
+			ModuleID:            inst.ModuleID,
+			ModuleName:          inst.ModuleName,
+			Version:             s.Version,
+			PathPrefix:          prefix,
+			Log:                 s.log,
+			ArtCache:            s.artCache,
+		}
+
+		instServer := New(subOpt)
+		instRoutes := instServer.routes()
+
+		mux.Handle(prefix+"/", http.StripPrefix(prefix, instRoutes))
+		mux.HandleFunc("GET "+prefix, func(w http.ResponseWriter, r *http.Request) {
+			http.Redirect(w, r, prefix+"/manifest.json", http.StatusTemporaryRedirect)
+		})
+	}
+
+	return mux
+}
+
+func (s *Server) Handler() http.Handler {
+	var rootHandler http.Handler
+	if len(s.Instances) > 0 {
+		rootHandler = s.multiRoutes()
+	} else {
+		rootHandler = s.routes()
+	}
+
+	handler := s.withSecurityHeaders(rootHandler)
 	handler = s.withCORS(handler)
 	handler = s.withLogging(handler)
 	handler = s.withRecovery(handler)
@@ -93,7 +163,7 @@ func (s *Server) baseURL(r *http.Request) string {
 	if xfh := r.Header.Get("X-Forwarded-Host"); xfh != "" {
 		host = xfh
 	}
-	return scheme + "://" + host
+	return scheme + "://" + host + s.PathPrefix
 }
 
 func (s *Server) withSecurityHeaders(next http.Handler) http.Handler {

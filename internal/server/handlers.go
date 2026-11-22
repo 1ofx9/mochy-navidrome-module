@@ -539,6 +539,59 @@ func (s *Server) serveHealth(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+type multiRootInstance struct {
+	Slug        string `json:"slug"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	ManifestURL string `json:"manifestUrl"`
+	ServerURL   string `json:"serverUrl,omitempty"`
+}
+
+type multiRootResponse struct {
+	Status    string              `json:"status"`
+	Version   string              `json:"version"`
+	Mode      string              `json:"mode"`
+	Instances []multiRootInstance `json:"instances"`
+}
+
+func (s *Server) serveMultiRoot(w http.ResponseWriter, r *http.Request) {
+	base := s.baseURL(r)
+	instances := make([]multiRootInstance, 0, len(s.Instances))
+	for _, inst := range s.Instances {
+		instBase := base + "/" + inst.Slug
+		if s.PublicURL != "" {
+			instBase = strings.TrimRight(s.PublicURL, "/") + "/" + inst.Slug
+		}
+		instances = append(instances, multiRootInstance{
+			Slug:        inst.Slug,
+			ID:          inst.ModuleID,
+			Name:        inst.ModuleName,
+			ManifestURL: instBase + "/manifest.json",
+			ServerURL:   inst.DefaultNavidromeURL,
+		})
+	}
+
+	writeJSON(w, http.StatusOK, multiRootResponse{
+		Status:    "ok",
+		Version:   s.Version,
+		Mode:      "multi-instance",
+		Instances: instances,
+	})
+}
+
+func (s *Server) serveMultiHealth(w http.ResponseWriter, r *http.Request) {
+	slugs := make([]string, 0, len(s.Instances))
+	for _, inst := range s.Instances {
+		slugs = append(slugs, inst.Slug)
+	}
+	writeJSON(w, http.StatusOK, map[string]any{
+		"status":    "ok",
+		"version":   s.Version,
+		"mode":      "multi-instance",
+		"instances": slugs,
+	})
+}
+
 func pathID(r *http.Request, prefix string) string {
 	id := r.PathValue("id")
 	if id == "" {
